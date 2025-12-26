@@ -24,9 +24,12 @@
 
       <main class="relative w-full max-w-md px-6 py-12">
         <!-- Loading State -->
-        <div id="loading-state" class="glass-card rounded-3xl p-8 text-center fade-up hidden">
-          <div class="spinner mx-auto mb-4"></div>
-          <p id="loading-text" class="text-white/80">Detecting your location...</p>
+        <div id="loading-state" class="modal-overlay {% if forecast or error %}hidden{% endif %}">
+          <div class="modal-backdrop"></div>
+          <div class="modal-content glass-card rounded-3xl p-8 text-center fade-up">
+            <div class="spinner mx-auto mb-4"></div>
+            <p id="loading-text" class="text-white/80">Detecting your location...</p>
+          </div>
         </div>
 
         <!-- Permission Request -->
@@ -158,7 +161,9 @@
 
       const hasWeatherData = {{ 'true' if forecast or error else 'false' }};
       const urlParams = new URLSearchParams(window.location.search);
-      const hasLocationParams = urlParams.has('lat') || urlParams.has('address');
+      const addressParam = urlParams.get('address');
+      const hasAddressParam = addressParam && addressParam.trim().length > 0;
+      const hasLocationParams = (urlParams.has('lat') && urlParams.has('lon')) || hasAddressParam;
 
       function showState(state) {
         loadingState.classList.add('hidden');
@@ -207,19 +212,7 @@
           permissionError.textContent = 'Geolocation is not supported';
           permissionError.classList.remove('hidden');
         } else {
-          // Check if we can get permission silently
-          navigator.permissions?.query({ name: 'geolocation' }).then((result) => {
-            if (result.state === 'granted') {
-              requestLocation();
-            } else if (result.state === 'prompt') {
-              requestLocation();
-            } else {
-              showState(permissionState);
-            }
-          }).catch(() => {
-            // Fallback: just try to request location
-            requestLocation();
-          });
+          requestLocation();
         }
       }
 

@@ -5,8 +5,6 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
-DEFAULT_LAT = "37.7749"
-DEFAULT_LON = "-122.4194"
 WEATHER_GOV_USER_AGENT = os.getenv(
     "WEATHER_GOV_USER_AGENT", "(weather.jawand.dev, jawandsingh@gmail.com)"
 )
@@ -126,7 +124,7 @@ def index():
     forecast = None
     error = None
     resolved_location = None
-    search_source = "Default location"
+    search_source = None
 
     if lat and lon:
         forecast, error = fetch_forecast(lat, lon)
@@ -136,8 +134,6 @@ def index():
         search_source = "Address search"
         if not error:
             forecast, error = fetch_forecast(lat, lon)
-    else:
-        forecast, error = fetch_forecast(DEFAULT_LAT, DEFAULT_LON)
 
     return render_template(
         "index.html",
