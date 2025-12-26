@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Weather App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-900">
+    <main class="mx-auto max-w-2xl px-6 py-16">
+      <header class="mb-10 text-center">
+        <h1 class="text-3xl font-semibold tracking-tight">Weather App</h1>
+        <p class="mt-2 text-slate-600">Simple Flask + Tailwind starter</p>
+      </header>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <form method="get" class="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+          <div>
+            <label for="lat" class="text-sm font-medium text-slate-700"
+              >Latitude</label
+            >
+            <input
+              id="lat"
+              name="lat"
+              type="text"
+              inputmode="decimal"
+              value="{{ lat }}"
+              placeholder="37.7749"
+              class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-slate-400 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label for="lon" class="text-sm font-medium text-slate-700"
+              >Longitude</label
+            >
+            <input
+              id="lon"
+              name="lon"
+              type="text"
+              inputmode="decimal"
+              value="{{ lon }}"
+              placeholder="-122.4194"
+              class="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 text-sm focus:border-slate-400 focus:outline-none"
+            />
+          </div>
+          <div class="flex items-end">
+            <button
+              class="w-full rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              type="submit"
+            >
+              Get forecast
+            </button>
+          </div>
+        </form>
+
+        {% if error %}
+          <div class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <p class="text-sm font-medium text-rose-700">{{ error }}</p>
+          </div>
+        {% elif forecast %}
+          <div class="mt-6 rounded-xl bg-slate-50 p-4">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-slate-600">{{ forecast.location }}</p>
+                <p class="text-3xl font-semibold">
+                  {{ forecast.period.temperature }}°{{ forecast.period.temperatureUnit }}
+                </p>
+                <p class="text-sm text-slate-600">
+                  {{ forecast.period.shortForecast }}
+                </p>
+              </div>
+              <div class="text-left sm:text-right">
+                <p class="text-sm font-medium text-slate-700">
+                  {{ forecast.period.name }}
+                </p>
+                <p class="text-sm text-slate-500">
+                  Wind {{ forecast.period.windSpeed }} {{ forecast.period.windDirection }}
+                </p>
+                {% if forecast.next_period %}
+                  <p class="text-sm text-slate-500">
+                    Next: {{ forecast.next_period.name }} ·
+                    {{ forecast.next_period.temperature }}°{{ forecast.next_period.temperatureUnit }}
+                    · {{ forecast.next_period.shortForecast }}
+                  </p>
+                {% endif %}
+              </div>
+            </div>
+            <p class="mt-4 text-sm text-slate-600">
+              {{ forecast.period.detailedForecast }}
+            </p>
+          </div>
+        {% else %}
+          <div class="mt-6 rounded-xl bg-slate-50 p-4">
+            <p class="text-sm text-slate-600">
+              Enter coordinates to load the latest forecast from api.weather.gov.
+            </p>
+          </div>
+        {% endif %}
+
+        <p class="mt-4 text-xs text-slate-500">
+          Data source: api.weather.gov
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
