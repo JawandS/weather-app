@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Weather App</title>
+    <title>Weather</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -14,7 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="min-h-screen text-white antialiased">
-    <div class="relative min-h-screen overflow-hidden">
+    <div class="relative min-h-screen overflow-hidden flex items-center justify-center">
       <div class="absolute inset-0">
         <div class="orb orb-one"></div>
         <div class="orb orb-two"></div>
@@ -22,176 +22,230 @@
         <div class="bg-grid"></div>
       </div>
 
-      <main
-        class="relative mx-auto flex w-full max-w-6xl flex-col gap-12 px-6 py-16 lg:flex-row lg:items-start"
-      >
-        <header class="flex-1 space-y-6 fade-up delay-1">
-          <div class="grid gap-4 sm:grid-cols-2">
-            <div class="glass-panel rounded-2xl p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-white/60">
-                Location
-              </p>
-              {% if forecast %}
-                <p class="mt-2 text-lg font-semibold">
-                  {{ forecast.location }}
-                </p>
-              {% else %}
-                <p class="mt-2 text-lg font-semibold">Awaiting search</p>
-              {% endif %}
-              {% if resolved_location %}
-                <p class="mt-2 text-xs text-white/60">
-                  Search: {{ resolved_location }}
-                </p>
-              {% elif address %}
-                <p class="mt-2 text-xs text-white/60">
-                  Search: {{ address }}
-                </p>
-              {% endif %}
-            </div>
-            <div class="glass-panel rounded-2xl p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-white/60">
-                Search Mode
-              </p>
-              <p class="mt-2 text-lg font-semibold">{{ search_source }}</p>
-            </div>
-          </div>
-          <p class="text-xs text-white/60">Data source: api.weather.gov</p>
-        </header>
+      <main class="relative w-full max-w-md px-6 py-12">
+        <!-- Loading State -->
+        <div id="loading-state" class="glass-card rounded-3xl p-8 text-center fade-up hidden">
+          <div class="spinner mx-auto mb-4"></div>
+          <p id="loading-text" class="text-white/80">Detecting your location...</p>
+        </div>
 
-        <section
-          class="glass-card w-full max-w-xl flex-1 rounded-3xl p-6 sm:p-8 fade-up delay-2"
-        >
-          <form method="get" class="grid gap-4">
-            <div>
-              <label for="address" class="text-sm font-medium text-white/70"
-                >Search by address</label
-              >
+        <!-- Permission Request -->
+        <div id="permission-state" class="glass-card rounded-3xl p-8 text-center fade-up hidden">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-white/10 flex items-center justify-center">
+            <svg class="w-8 h-8 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <h2 class="text-xl font-semibold mb-2">Location Access</h2>
+          <p class="text-white/60 text-sm mb-6">Allow location access to see weather for your area</p>
+          <button id="grant-location" class="btn-primary w-full rounded-2xl px-5 py-3 text-sm">
+            Enable Location
+          </button>
+          <p id="permission-error" class="text-rose-300 text-xs mt-4 hidden"></p>
+        </div>
+
+        <!-- Weather Display -->
+        <div id="weather-state" class="fade-up {% if not forecast and not error %}hidden{% endif %}">
+          {% if error %}
+          <div class="glass-card rounded-3xl p-6 border border-rose-300/30 bg-rose-500/5 mb-4">
+            <p class="text-rose-200 text-sm text-center">{{ error }}</p>
+          </div>
+          {% endif %}
+
+          {% if forecast %}
+          <div class="glass-card rounded-3xl p-8">
+            <!-- Location Header -->
+            <div class="text-center mb-6">
+              <p class="text-white/60 text-xs uppercase tracking-widest mb-1">Current Weather</p>
+              <h1 class="text-lg font-medium">{{ forecast.location }}</h1>
+            </div>
+
+            <!-- Main Temperature -->
+            <div class="text-center mb-6">
+              <p class="text-7xl font-light tracking-tight">
+                {{ forecast.period.temperature }}<span class="text-4xl text-white/60">°{{ forecast.period.temperatureUnit }}</span>
+              </p>
+              <p class="text-white/70 mt-2">{{ forecast.period.shortForecast }}</p>
+            </div>
+
+            <!-- Weather Details -->
+            <div class="grid grid-cols-2 gap-3 mb-6">
+              <div class="glass-panel-subtle rounded-xl p-3 text-center">
+                <p class="text-xs text-white/50 uppercase tracking-wide">Wind</p>
+                <p class="text-sm font-medium mt-1">{{ forecast.period.windSpeed }} {{ forecast.period.windDirection }}</p>
+              </div>
+              <div class="glass-panel-subtle rounded-xl p-3 text-center">
+                <p class="text-xs text-white/50 uppercase tracking-wide">Period</p>
+                <p class="text-sm font-medium mt-1">{{ forecast.period.name }}</p>
+              </div>
+            </div>
+
+            {% if forecast.next_period %}
+            <div class="glass-panel-subtle rounded-xl p-3 mb-6">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-white/50 uppercase tracking-wide">{{ forecast.next_period.name }}</p>
+                  <p class="text-sm text-white/70 mt-1">{{ forecast.next_period.shortForecast }}</p>
+                </div>
+                <p class="text-2xl font-light">{{ forecast.next_period.temperature }}°</p>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Detailed Forecast -->
+            <p class="text-sm text-white/60 leading-relaxed">{{ forecast.period.detailedForecast }}</p>
+          </div>
+          {% endif %}
+
+          <!-- Change Location -->
+          <div class="mt-4 text-center">
+            <button id="toggle-location" class="text-white/50 hover:text-white/80 text-sm py-2 transition-colors">
+              Change location
+            </button>
+          </div>
+        </div>
+
+        <!-- Location Modal -->
+        <div id="location-modal" class="modal-overlay hidden">
+          <div class="modal-backdrop" id="modal-backdrop"></div>
+          <div class="modal-content glass-card rounded-2xl p-6 w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium">Change Location</h3>
+              <button id="close-modal" class="text-white/50 hover:text-white/80 transition-colors p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <form method="get" id="location-form">
               <input
                 id="address"
                 name="address"
                 type="text"
                 autocomplete="street-address"
                 value="{{ address }}"
-                placeholder="1600 Pennsylvania Ave NW, Washington, DC"
-                class="glass-input mt-2 w-full rounded-2xl px-4 py-2 text-sm"
+                placeholder="Enter city or address"
+                class="glass-input w-full rounded-xl px-4 py-3 text-sm mb-3"
               />
-            </div>
-            <div class="flex flex-col gap-3 sm:flex-row">
-              <button
-                class="btn-primary w-full rounded-2xl px-5 py-2 text-sm sm:w-auto"
-                type="submit"
-              >
-                Search address
+              <button type="submit" class="btn-primary w-full rounded-xl px-4 py-3 text-sm mb-3">
+                Search
               </button>
-              <button
-                class="btn-secondary w-full rounded-2xl px-5 py-2 text-sm sm:w-auto"
-                type="button"
-                id="use-location"
-              >
-                Use my location
+              <button type="button" id="use-current-location" class="btn-secondary w-full rounded-xl px-4 py-3 text-sm">
+                Use current location
               </button>
-            </div>
-            <p
-              id="location-status"
-              class="text-xs text-white/70"
-              aria-live="polite"
-            ></p>
-          </form>
-
-          <div class="mt-6 space-y-4">
-            {% if error %}
-              <div
-                class="glass-panel rounded-2xl border border-rose-200/40 bg-rose-500/10 p-4 text-rose-50"
-              >
-                <p class="text-sm font-medium">{{ error }}</p>
-              </div>
-            {% elif forecast %}
-              <div class="glass-panel rounded-2xl p-5">
-                <div
-                  class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <p class="text-sm text-white/70">
-                      {{ forecast.location }}
-                    </p>
-                    <p class="text-4xl font-semibold">
-                      {{ forecast.period.temperature }}°{{ forecast.period.temperatureUnit }}
-                    </p>
-                    <p class="text-sm text-white/70">
-                      {{ forecast.period.shortForecast }}
-                    </p>
-                  </div>
-                  <div class="text-left sm:text-right">
-                    <p class="text-sm font-medium text-white">
-                      {{ forecast.period.name }}
-                    </p>
-                    <p class="text-sm text-white/70">
-                      Wind {{ forecast.period.windSpeed }} {{ forecast.period.windDirection }}
-                    </p>
-                    {% if forecast.next_period %}
-                      <p class="text-sm text-white/70">
-                        Next: {{ forecast.next_period.name }} ·
-                        {{ forecast.next_period.temperature }}°{{ forecast.next_period.temperatureUnit }}
-                        · {{ forecast.next_period.shortForecast }}
-                      </p>
-                    {% endif %}
-                  </div>
-                </div>
-                <div class="my-4 h-px bg-white/15"></div>
-                <p class="text-sm text-white/75">
-                  {{ forecast.period.detailedForecast }}
-                </p>
-              </div>
-            {% else %}
-              <div class="glass-panel rounded-2xl p-4">
-                <p class="text-sm text-white/70">
-                  Search by address or use your current location to load the
-                  latest forecast from api.weather.gov.
-                </p>
-              </div>
-            {% endif %}
+            </form>
           </div>
-        </section>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center text-white/30 text-xs mt-6">Data from api.weather.gov</p>
       </main>
     </div>
+
     <script>
-      const locationButton = document.getElementById("use-location");
-      const statusEl = document.getElementById("location-status");
+      const loadingState = document.getElementById('loading-state');
+      const permissionState = document.getElementById('permission-state');
+      const weatherState = document.getElementById('weather-state');
+      const loadingText = document.getElementById('loading-text');
+      const grantLocationBtn = document.getElementById('grant-location');
+      const permissionError = document.getElementById('permission-error');
+      const toggleLocationBtn = document.getElementById('toggle-location');
+      const locationModal = document.getElementById('location-modal');
+      const closeModalBtn = document.getElementById('close-modal');
+      const modalBackdrop = document.getElementById('modal-backdrop');
+      const useCurrentLocationBtn = document.getElementById('use-current-location');
 
-      if (locationButton && statusEl) {
-        const defaultLabel = locationButton.textContent;
+      const hasWeatherData = {{ 'true' if forecast or error else 'false' }};
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasLocationParams = urlParams.has('lat') || urlParams.has('address');
 
-        locationButton.addEventListener("click", () => {
-          if (!navigator.geolocation) {
-            statusEl.textContent = "Geolocation is not supported in this browser.";
-            return;
-          }
-
-          locationButton.disabled = true;
-          locationButton.textContent = "Locating...";
-          statusEl.textContent = "Requesting your location...";
-
-          navigator.geolocation.getCurrentPosition(
-            (position) => {
-              const lat = position.coords.latitude.toFixed(4);
-              const lon = position.coords.longitude.toFixed(4);
-              const params = new URLSearchParams({ lat, lon });
-              window.location = `/?${params.toString()}`;
-            },
-            (error) => {
-              locationButton.disabled = false;
-              locationButton.textContent = defaultLabel;
-              statusEl.textContent =
-                error.message || "Unable to retrieve your location.";
-            },
-            {
-              enableHighAccuracy: false,
-              timeout: 10000,
-              maximumAge: 60000,
-            }
-          );
-        });
+      function showState(state) {
+        loadingState.classList.add('hidden');
+        permissionState.classList.add('hidden');
+        weatherState.classList.add('hidden');
+        state.classList.remove('hidden');
       }
+
+      function openModal() {
+        locationModal.classList.remove('hidden');
+        document.getElementById('address').focus();
+      }
+
+      function closeModal() {
+        locationModal.classList.add('hidden');
+      }
+
+      function requestLocation() {
+        showState(loadingState);
+        loadingText.textContent = 'Detecting your location...';
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            loadingText.textContent = 'Loading weather...';
+            const lat = position.coords.latitude.toFixed(4);
+            const lon = position.coords.longitude.toFixed(4);
+            window.location = `/?lat=${lat}&lon=${lon}`;
+          },
+          (error) => {
+            if (error.code === error.PERMISSION_DENIED) {
+              showState(permissionState);
+            } else {
+              permissionError.textContent = error.message || 'Unable to get location';
+              permissionError.classList.remove('hidden');
+              showState(permissionState);
+            }
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        );
+      }
+
+      // Initial load logic
+      if (!hasWeatherData && !hasLocationParams) {
+        if (!navigator.geolocation) {
+          showState(permissionState);
+          permissionError.textContent = 'Geolocation is not supported';
+          permissionError.classList.remove('hidden');
+        } else {
+          // Check if we can get permission silently
+          navigator.permissions?.query({ name: 'geolocation' }).then((result) => {
+            if (result.state === 'granted') {
+              requestLocation();
+            } else if (result.state === 'prompt') {
+              requestLocation();
+            } else {
+              showState(permissionState);
+            }
+          }).catch(() => {
+            // Fallback: just try to request location
+            requestLocation();
+          });
+        }
+      }
+
+      // Grant location button
+      grantLocationBtn?.addEventListener('click', () => {
+        permissionError.classList.add('hidden');
+        requestLocation();
+      });
+
+      // Toggle location modal
+      toggleLocationBtn?.addEventListener('click', openModal);
+      closeModalBtn?.addEventListener('click', closeModal);
+      modalBackdrop?.addEventListener('click', closeModal);
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !locationModal.classList.contains('hidden')) {
+          closeModal();
+        }
+      });
+
+      // Use current location from modal
+      useCurrentLocationBtn?.addEventListener('click', () => {
+        closeModal();
+        requestLocation();
+      });
     </script>
   </body>
 </html>
