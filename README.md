@@ -14,12 +14,13 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open http://127.0.0.1:5000 in your browser.
+Open http://127.0.0.1:8080 in your browser.
 
 ## Notes
 
-- The UI expects latitude/longitude coordinates and fetches data from api.weather.gov.
-- Weather.gov requires a User-Agent header; set one with:
+- Search by address or use your current location; the app geocodes addresses with
+  OpenStreetMap Nominatim and fetches forecasts from api.weather.gov.
+- Weather.gov and Nominatim require a User-Agent header; set one with:
 
 ```bash
 export WEATHER_GOV_USER_AGENT="weather-app (you@example.com)"

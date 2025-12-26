@@ -7,9 +7,18 @@ app = Flask(__name__)
 
 DEFAULT_LAT = "37.7749"
 DEFAULT_LON = "-122.4194"
+WEATHER_GOV_USER_AGENT = os.getenv(
+    "WEATHER_GOV_USER_AGENT", "(weather.jawand.dev, jawandsingh@gmail.com)"
+)
 WEATHER_GOV_HEADERS = {
-    "User-Agent": "(weather.jawand.dev, jawandsingh@gmail.com)",
+    "User-Agent": WEATHER_GOV_USER_AGENT,
     "Accept": "application/geo+json",
+}
+GEOCODER_URL = "https://nominatim.openstreetmap.org/search"
+GEOCODER_HEADERS = {
+    "User-Agent": WEATHER_GOV_USER_AGENT,
+    "Accept": "application/json",
+    "Accept-Language": "en",
 }
 
 
@@ -74,17 +83,69 @@ def fetch_forecast(lat_value, lon_value):
     }, None
 
 
+def geocode_address(address):
+    if address is None:
+        return None, None, None, "Enter an address."
+
+    query = address.strip()
+    if not query:
+        return None, None, None, "Enter an address."
+
+    try:
+        response = requests.get(
+            GEOCODER_URL,
+            params={"q": query, "format": "json", "limit": 1},
+            headers=GEOCODER_HEADERS,
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.HTTPError:
+        return None, None, None, "Geocoding service returned an error."
+    except requests.RequestException:
+        return None, None, None, "Could not reach the geocoding service."
+
+    results = response.json()
+    if not results:
+        return None, None, None, "No results found for that address."
+
+    result = results[0]
+    lat = result.get("lat")
+    lon = result.get("lon")
+    display_name = result.get("display_name")
+    if not lat or not lon:
+        return None, None, None, "No coordinates returned for that address."
+
+    return lat, lon, display_name, None
+
+
 @app.route("/")
 def index():
-    lat = request.args.get("lat", DEFAULT_LAT)
-    lon = request.args.get("lon", DEFAULT_LON)
-    forecast, error = fetch_forecast(lat, lon)
+    address = request.args.get("address", "").strip()
+    lat = request.args.get("lat")
+    lon = request.args.get("lon")
+    forecast = None
+    error = None
+    resolved_location = None
+    search_source = "Default location"
+
+    if lat and lon:
+        forecast, error = fetch_forecast(lat, lon)
+        search_source = "Current location"
+    elif address:
+        lat, lon, resolved_location, error = geocode_address(address)
+        search_source = "Address search"
+        if not error:
+            forecast, error = fetch_forecast(lat, lon)
+    else:
+        forecast, error = fetch_forecast(DEFAULT_LAT, DEFAULT_LON)
+
     return render_template(
         "index.html",
-        lat=lat,
-        lon=lon,
+        address=address,
         forecast=forecast,
         error=error,
+        resolved_location=resolved_location,
+        search_source=search_source,
     )
 
 

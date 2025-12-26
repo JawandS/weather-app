@@ -92,6 +92,24 @@
         transform: translateY(0);
       }
 
+      .btn-secondary {
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.16);
+        color: #f8fbff;
+        font-weight: 600;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.24);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .btn-secondary:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+
       .badge {
         display: inline-flex;
         align-items: center;
@@ -222,28 +240,37 @@
             </h1>
             <p class="max-w-xl text-base text-white/80 sm:text-lg">
               Glassmorphic forecasts with a bright blue atmosphere and
-              NOAA-powered detail. Drop in coordinates to pull the latest
-              conditions and upcoming periods.
+              NOAA-powered detail. Search by address or use your current
+              location to pull the latest conditions and upcoming periods.
             </p>
           </div>
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="glass-panel rounded-2xl p-4">
               <p class="text-xs uppercase tracking-[0.2em] text-white/60">
-                Coordinates
-              </p>
-              <p class="mt-2 text-lg font-semibold">{{ lat }}, {{ lon }}</p>
-            </div>
-            <div class="glass-panel rounded-2xl p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-white/60">
-                Forecast Window
+                Location
               </p>
               {% if forecast %}
                 <p class="mt-2 text-lg font-semibold">
-                  {{ forecast.period.name }}
+                  {{ forecast.location }}
                 </p>
               {% else %}
-                <p class="mt-2 text-lg font-semibold">Awaiting update</p>
+                <p class="mt-2 text-lg font-semibold">Awaiting search</p>
               {% endif %}
+              {% if resolved_location %}
+                <p class="mt-2 text-xs text-white/60">
+                  Search: {{ resolved_location }}
+                </p>
+              {% elif address %}
+                <p class="mt-2 text-xs text-white/60">
+                  Search: {{ address }}
+                </p>
+              {% endif %}
+            </div>
+            <div class="glass-panel rounded-2xl p-4">
+              <p class="text-xs uppercase tracking-[0.2em] text-white/60">
+                Search Mode
+              </p>
+              <p class="mt-2 text-lg font-semibold">{{ search_source }}</p>
             </div>
           </div>
           <p class="text-xs text-white/60">Data source: api.weather.gov</p>
@@ -254,42 +281,40 @@
           style="animation-delay: 0.15s"
         >
           <form method="get" class="grid gap-4">
-            <div class="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label for="lat" class="text-sm font-medium text-white/70"
-                  >Latitude</label
-                >
-                <input
-                  id="lat"
-                  name="lat"
-                  type="text"
-                  inputmode="decimal"
-                  value="{{ lat }}"
-                  placeholder="37.7749"
-                  class="glass-input mt-2 w-full rounded-2xl px-4 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label for="lon" class="text-sm font-medium text-white/70"
-                  >Longitude</label
-                >
-                <input
-                  id="lon"
-                  name="lon"
-                  type="text"
-                  inputmode="decimal"
-                  value="{{ lon }}"
-                  placeholder="-122.4194"
-                  class="glass-input mt-2 w-full rounded-2xl px-4 py-2 text-sm"
-                />
-              </div>
+            <div>
+              <label for="address" class="text-sm font-medium text-white/70"
+                >Search by address</label
+              >
+              <input
+                id="address"
+                name="address"
+                type="text"
+                autocomplete="street-address"
+                value="{{ address }}"
+                placeholder="1600 Pennsylvania Ave NW, Washington, DC"
+                class="glass-input mt-2 w-full rounded-2xl px-4 py-2 text-sm"
+              />
             </div>
-            <button
-              class="btn-primary w-full rounded-2xl px-5 py-2 text-sm sm:w-auto"
-              type="submit"
-            >
-              Get forecast
-            </button>
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                class="btn-primary w-full rounded-2xl px-5 py-2 text-sm sm:w-auto"
+                type="submit"
+              >
+                Search address
+              </button>
+              <button
+                class="btn-secondary w-full rounded-2xl px-5 py-2 text-sm sm:w-auto"
+                type="button"
+                id="use-location"
+              >
+                Use my location
+              </button>
+            </div>
+            <p
+              id="location-status"
+              class="text-xs text-white/70"
+              aria-live="polite"
+            ></p>
           </form>
 
           <div class="mt-6 space-y-4">
@@ -339,8 +364,8 @@
             {% else %}
               <div class="glass-panel rounded-2xl p-4">
                 <p class="text-sm text-white/70">
-                  Enter coordinates to load the latest forecast from
-                  api.weather.gov.
+                  Search by address or use your current location to load the
+                  latest forecast from api.weather.gov.
                 </p>
               </div>
             {% endif %}
@@ -348,5 +373,44 @@
         </section>
       </main>
     </div>
+    <script>
+      const locationButton = document.getElementById("use-location");
+      const statusEl = document.getElementById("location-status");
+
+      if (locationButton && statusEl) {
+        const defaultLabel = locationButton.textContent;
+
+        locationButton.addEventListener("click", () => {
+          if (!navigator.geolocation) {
+            statusEl.textContent = "Geolocation is not supported in this browser.";
+            return;
+          }
+
+          locationButton.disabled = true;
+          locationButton.textContent = "Locating...";
+          statusEl.textContent = "Requesting your location...";
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const lat = position.coords.latitude.toFixed(4);
+              const lon = position.coords.longitude.toFixed(4);
+              const params = new URLSearchParams({ lat, lon });
+              window.location = `/?${params.toString()}`;
+            },
+            (error) => {
+              locationButton.disabled = false;
+              locationButton.textContent = defaultLabel;
+              statusEl.textContent =
+                error.message || "Unable to retrieve your location.";
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 10000,
+              maximumAge: 60000,
+            }
+          );
+        });
+      }
+    </script>
   </body>
 </html>
