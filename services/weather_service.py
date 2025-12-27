@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 import requests
 
@@ -96,19 +97,27 @@ def build_daily_forecast(periods, limit=8):
         return []
     grouped = {}
     order = []
+    today = None
 
     for period in periods:
         dt = parse_iso_datetime(period.get("startTime"))
         if not dt:
             continue
+        if today is None:
+            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+            today = now.date()
+        if today and dt.date() < today:
+            continue
         day_key = dt.date().isoformat()
         if day_key not in grouped:
             grouped[day_key] = {
                 "date": dt,
-                "name": period.get("name") if period.get("isDaytime") else dt.strftime("%a"),
-                "shortForecast": period.get("shortForecast"),
+                "name": dt.strftime("%a"),
+                "shortForecast": None,
                 "high": None,
                 "low": None,
+                "all_high": None,
+                "all_low": None,
                 "temperatureUnit": period.get("temperatureUnit"),
             }
             order.append(day_key)
@@ -116,11 +125,24 @@ def build_daily_forecast(periods, limit=8):
         entry = grouped[day_key]
         temp = period.get("temperature")
         if isinstance(temp, (int, float)):
-            entry["high"] = temp if entry["high"] is None else max(entry["high"], temp)
-            entry["low"] = temp if entry["low"] is None else min(entry["low"], temp)
+            entry["all_high"] = (
+                temp if entry["all_high"] is None else max(entry["all_high"], temp)
+            )
+            entry["all_low"] = (
+                temp if entry["all_low"] is None else min(entry["all_low"], temp)
+            )
+            if period.get("isDaytime"):
+                entry["high"] = temp if entry["high"] is None else max(entry["high"], temp)
+            else:
+                entry["low"] = temp if entry["low"] is None else min(entry["low"], temp)
         if period.get("isDaytime"):
             entry["name"] = period.get("name") or entry["name"]
             if period.get("shortForecast"):
+                entry["shortForecast"] = period.get("shortForecast")
+        else:
+            if entry.get("name") == dt.strftime("%a") and period.get("name"):
+                entry["name"] = period.get("name")
+            if entry.get("shortForecast") is None and period.get("shortForecast"):
                 entry["shortForecast"] = period.get("shortForecast")
         if entry.get("temperatureUnit") is None and period.get("temperatureUnit"):
             entry["temperatureUnit"] = period.get("temperatureUnit")
@@ -128,12 +150,14 @@ def build_daily_forecast(periods, limit=8):
     daily = []
     for day_key in order[:limit]:
         entry = grouped[day_key]
+        high = entry.get("high") if entry.get("high") is not None else entry.get("all_high")
+        low = entry.get("low") if entry.get("low") is not None else entry.get("all_low")
         daily.append(
             {
                 "name": entry.get("name") or entry["date"].strftime("%a"),
                 "shortForecast": entry.get("shortForecast"),
-                "high": entry.get("high"),
-                "low": entry.get("low"),
+                "high": high,
+                "low": low,
                 "temperatureUnit": entry.get("temperatureUnit"),
             }
         )

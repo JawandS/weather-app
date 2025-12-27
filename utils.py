@@ -78,6 +78,7 @@ def _ensure_today(cache):
     today = _today_key()
     if cache.get("meta", {}).get("last_refresh_date") != today:
         cache["groups"] = {}
+        cache["locations"] = {}
         cache["meta"]["last_refresh_date"] = today
         return True
     return False
