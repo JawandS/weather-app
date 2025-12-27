@@ -20,6 +20,12 @@ const elements = {
   switchToCurrentBtn: document.getElementById('switch-to-current'),
   keepLocationBtn: document.getElementById('keep-location'),
   addressInput: document.getElementById('address'),
+  refreshBtn: document.getElementById('refresh-weather'),
+  refreshModal: document.getElementById('refresh-modal'),
+  refreshModalBackdrop: document.getElementById('refresh-modal-backdrop'),
+  refreshCloseBtn: document.getElementById('refresh-close'),
+  refreshLocationList: document.getElementById('refresh-location-list'),
+  refreshStatus: document.getElementById('refresh-status'),
 };
 
 // Configuration
@@ -158,6 +164,59 @@ function requestLocation({ showLoading = true, onSuccess } = {}) {
 }
 
 /**
+ * Open the refresh cache modal
+ */
+function openRefreshModal() {
+  elements.refreshModal?.classList.remove('hidden');
+  elements.refreshStatus?.classList.add('hidden');
+}
+
+/**
+ * Close the refresh cache modal
+ */
+function closeRefreshModal() {
+  elements.refreshModal?.classList.add('hidden');
+  elements.refreshStatus?.classList.add('hidden');
+}
+
+/**
+ * Handle refresh/delete actions for a location
+ */
+async function handleRefreshAction(action, locationKey) {
+  if (!locationKey) return;
+  const isDelete = action === 'delete';
+
+  closeRefreshModal();
+  if (elements.loadingText) {
+    elements.loadingText.textContent = isDelete
+      ? 'Removing cached data...'
+      : 'Refreshing weather data...';
+  }
+  showState(elements.loadingState);
+
+  try {
+    const response = await fetch('/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, location_key: locationKey }),
+    });
+    if (!response.ok) {
+      throw new Error('Refresh failed');
+    }
+  } catch (error) {
+    showState(elements.weatherState);
+    openRefreshModal();
+    if (elements.refreshStatus) {
+      elements.refreshStatus.textContent = 'Unable to update cache. Please try again.';
+      elements.refreshStatus.classList.remove('hidden');
+    }
+    return;
+  }
+
+  window.location.reload();
+}
+
+/**
  * Check if user has moved and offer to switch location
  */
 function checkForLocationSwitch(coords) {
@@ -209,6 +268,9 @@ function initWeatherApp(options = {}) {
     if (!elements.switchLocationModal?.classList.contains('hidden')) {
       closeSwitchModal();
     }
+    if (!elements.refreshModal?.classList.contains('hidden')) {
+      closeRefreshModal();
+    }
   });
 
   elements.useCurrentLocationBtn?.addEventListener('click', () => {
@@ -225,6 +287,18 @@ function initWeatherApp(options = {}) {
 
   elements.keepLocationBtn?.addEventListener('click', closeSwitchModal);
   elements.switchModalBackdrop?.addEventListener('click', closeSwitchModal);
+
+  elements.refreshBtn?.addEventListener('click', openRefreshModal);
+  elements.refreshModalBackdrop?.addEventListener('click', closeRefreshModal);
+  elements.refreshCloseBtn?.addEventListener('click', closeRefreshModal);
+
+  elements.refreshLocationList?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-refresh-action]');
+    if (!button) return;
+    const action = button.dataset.refreshAction;
+    const locationKey = button.dataset.locationKey;
+    handleRefreshAction(action, locationKey);
+  });
 }
 
 // Export for use in templates

@@ -2,10 +2,13 @@ import requests
 
 from utils import (
     cached_get_json,
+    format_location_key,
     format_alert_time,
     format_hour_label,
     get_weather_headers,
+    location_group_key,
     parse_iso_datetime,
+    register_location,
 )
 
 WEATHER_GOV_HEADERS = get_weather_headers()
@@ -67,11 +70,16 @@ def fetch_forecast(lat_value, lon_value):
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         return None, "Coordinates are out of range."
 
+    location_key = format_location_key(lat, lon)
+    cache_group = location_group_key(location_key)
     points_url = f"https://api.weather.gov/points/{lat},{lon}"
 
     try:
         points_data = cached_get_json(
-            points_url, headers=WEATHER_GOV_HEADERS, ttl=12 * 60 * 60
+            points_url,
+            headers=WEATHER_GOV_HEADERS,
+            ttl=12 * 60 * 60,
+            cache_group=cache_group,
         )
     except requests.HTTPError:
         return None, "Weather.gov returned an error for those coordinates."
@@ -86,7 +94,10 @@ def fetch_forecast(lat_value, lon_value):
 
     try:
         forecast_data = cached_get_json(
-            forecast_url, headers=WEATHER_GOV_HEADERS, ttl=10 * 60
+            forecast_url,
+            headers=WEATHER_GOV_HEADERS,
+            ttl=10 * 60,
+            cache_group=cache_group,
         )
     except requests.HTTPError:
         return None, "Weather.gov returned an error for the forecast request."
@@ -109,7 +120,10 @@ def fetch_forecast(lat_value, lon_value):
     if hourly_url:
         try:
             hourly_data = cached_get_json(
-                hourly_url, headers=WEATHER_GOV_HEADERS, ttl=10 * 60
+                hourly_url,
+                headers=WEATHER_GOV_HEADERS,
+                ttl=10 * 60,
+                cache_group=cache_group,
             )
             hourly_periods = hourly_data.get("properties", {}).get("periods", [])
             hourly_today = build_hourly_today(hourly_periods)
@@ -125,7 +139,10 @@ def fetch_forecast(lat_value, lon_value):
     alerts_url = f"https://api.weather.gov/alerts/active?point={lat},{lon}"
     try:
         alerts_data = cached_get_json(
-            alerts_url, headers=WEATHER_GOV_HEADERS, ttl=5 * 60
+            alerts_url,
+            headers=WEATHER_GOV_HEADERS,
+            ttl=5 * 60,
+            cache_group=cache_group,
         )
         for feature in alerts_data.get("features", []) or []:
             props = feature.get("properties", {}) or {}
@@ -141,6 +158,9 @@ def fetch_forecast(lat_value, lon_value):
         alerts_error = "Alerts unavailable."
     except requests.RequestException:
         alerts_error = "Could not reach api.weather.gov."
+
+    if location_key:
+        register_location(location_key, location, lat, lon)
 
     return {
         "location": location,

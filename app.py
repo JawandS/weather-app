@@ -4,6 +4,13 @@ from flask import Flask, make_response, render_template, request
 
 from services.geocode_service import geocode_address
 from services.weather_service import fetch_forecast
+from utils import (
+    clear_cache,
+    clear_location_cache,
+    delete_location_cache,
+    format_location_key,
+    list_cached_locations,
+)
 
 app = Flask(__name__)
 
@@ -20,6 +27,7 @@ def index():
     resolved_location = None
     search_source = None
     used_cached_location = False
+    current_location_key = None
 
     if lat and lon:
         forecast, error = fetch_forecast(lat, lon)
@@ -34,7 +42,10 @@ def index():
         forecast, error = fetch_forecast(lat, lon)
         search_source = "Recent location"
         used_cached_location = True
+    if lat and lon:
+        current_location_key = format_location_key(lat, lon)
 
+    cached_locations = list_cached_locations()
     response = make_response(
         render_template(
             "index.html",
@@ -44,6 +55,8 @@ def index():
             resolved_location=resolved_location,
             search_source=search_source,
             used_cached_location=used_cached_location,
+            cached_locations=cached_locations,
+            current_location_key=current_location_key,
         )
     )
     if forecast and not error and lat and lon:
@@ -61,6 +74,21 @@ def index():
         )
 
     return response
+
+
+@app.route("/refresh", methods=["POST"])
+def refresh_cache():
+    payload = request.get_json(silent=True) or {}
+    location_key = payload.get("location_key") or request.form.get("location_key")
+    action = payload.get("action") or request.form.get("action")
+    if location_key:
+        if action == "delete":
+            delete_location_cache(location_key)
+        else:
+            clear_location_cache(location_key)
+    else:
+        clear_cache()
+    return {"status": "ok"}
 
 
 if __name__ == "__main__":

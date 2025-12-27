@@ -20,6 +20,7 @@ def geocode_address(address):
             params={"q": query, "format": "json", "limit": 1},
             headers=GEOCODER_HEADERS,
             ttl=24 * 60 * 60,
+            cache_group="geocode",
         )
     except requests.HTTPError:
         return None, None, None, "Geocoding service returned an error."
