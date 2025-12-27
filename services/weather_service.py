@@ -91,21 +91,52 @@ def build_hourly_today(periods):
     return hourly
 
 
-def build_daily_forecast(periods, limit=7):
-    daily = []
-    for period in periods or []:
-        if not period.get("isDaytime"):
+def build_daily_forecast(periods, limit=8):
+    if not periods:
+        return []
+    grouped = {}
+    order = []
+
+    for period in periods:
+        dt = parse_iso_datetime(period.get("startTime"))
+        if not dt:
             continue
+        day_key = dt.date().isoformat()
+        if day_key not in grouped:
+            grouped[day_key] = {
+                "date": dt,
+                "name": period.get("name") if period.get("isDaytime") else dt.strftime("%a"),
+                "shortForecast": period.get("shortForecast"),
+                "high": None,
+                "low": None,
+                "temperatureUnit": period.get("temperatureUnit"),
+            }
+            order.append(day_key)
+
+        entry = grouped[day_key]
+        temp = period.get("temperature")
+        if isinstance(temp, (int, float)):
+            entry["high"] = temp if entry["high"] is None else max(entry["high"], temp)
+            entry["low"] = temp if entry["low"] is None else min(entry["low"], temp)
+        if period.get("isDaytime"):
+            entry["name"] = period.get("name") or entry["name"]
+            if period.get("shortForecast"):
+                entry["shortForecast"] = period.get("shortForecast")
+        if entry.get("temperatureUnit") is None and period.get("temperatureUnit"):
+            entry["temperatureUnit"] = period.get("temperatureUnit")
+
+    daily = []
+    for day_key in order[:limit]:
+        entry = grouped[day_key]
         daily.append(
             {
-                "name": period.get("name"),
-                "temperature": period.get("temperature"),
-                "temperatureUnit": period.get("temperatureUnit"),
-                "shortForecast": period.get("shortForecast"),
+                "name": entry.get("name") or entry["date"].strftime("%a"),
+                "shortForecast": entry.get("shortForecast"),
+                "high": entry.get("high"),
+                "low": entry.get("low"),
+                "temperatureUnit": entry.get("temperatureUnit"),
             }
         )
-        if len(daily) >= limit:
-            break
     return daily
 
 
