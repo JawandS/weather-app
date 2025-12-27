@@ -8,8 +8,11 @@ const elements = {
   permissionState: document.getElementById('permission-state'),
   weatherState: document.getElementById('weather-state'),
   loadingText: document.getElementById('loading-text'),
+  loadingActions: document.getElementById('loading-actions'),
+  loadingSearchBtn: document.getElementById('loading-search'),
   grantLocationBtn: document.getElementById('grant-location'),
   permissionError: document.getElementById('permission-error'),
+  permissionSearchBtn: document.getElementById('search-location'),
   toggleLocationBtn: document.getElementById('toggle-location'),
   locationModal: document.getElementById('location-modal'),
   closeModalBtn: document.getElementById('close-modal'),
@@ -53,15 +56,27 @@ const elements = {
 // Configuration
 const CONFIG = {
   LOCATION_DELTA_THRESHOLD: 0.03,
-  GEOLOCATION_OPTIONS: {
-    enableHighAccuracy: false,
-    timeout: 10000,
-    maximumAge: 60000,
+  GEOLOCATION_QUICK: {
+    label: 'Checking for a recent location...',
+    options: {
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 600000,
+    },
+  },
+  GEOLOCATION_FRESH: {
+    label: 'Getting a fresh GPS fix...',
+    options: {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0,
+    },
   },
 };
 
 // State
 let pendingSwitchLocation = null;
+let locationRequestId = 0;
 let dailyDetailsMap = new Map();
 let currentDayDetails = null;
 let currentDayUnit = '';
@@ -76,11 +91,52 @@ function showState(state) {
   state?.classList.remove('hidden');
 }
 
-function showLoading(message) {
+function setLoadingText(message) {
   if (elements.loadingText && message) {
     elements.loadingText.textContent = message;
   }
+}
+
+function setLoadingActionsVisible(visible) {
+  if (!elements.loadingActions) return;
+  elements.loadingActions.classList.toggle('hidden', !visible);
+}
+
+function showLoading(message, { showLocationActions = false } = {}) {
+  setLoadingText(message);
+  setLoadingActionsVisible(showLocationActions);
   showState(elements.loadingState);
+}
+
+function resetPermissionUI() {
+  if (elements.permissionError) {
+    elements.permissionError.textContent = '';
+    elements.permissionError.classList.add('hidden');
+  }
+  if (elements.grantLocationBtn) {
+    elements.grantLocationBtn.textContent = 'Enable Location';
+  }
+}
+
+function showPermissionPrompt() {
+  resetPermissionUI();
+  showState(elements.permissionState);
+}
+
+function showPermissionError(message) {
+  resetPermissionUI();
+  if (elements.permissionError && message) {
+    elements.permissionError.textContent = message;
+    elements.permissionError.classList.remove('hidden');
+  }
+  if (elements.grantLocationBtn) {
+    elements.grantLocationBtn.textContent = 'Try Again';
+  }
+  showState(elements.permissionState);
+}
+
+function cancelLocationRequest() {
+  locationRequestId += 1;
 }
 
 /**
@@ -89,6 +145,14 @@ function showLoading(message) {
 function openModal() {
   elements.locationModal?.classList.remove('hidden');
   elements.addressInput?.focus();
+}
+
+function openManualSearch() {
+  cancelLocationRequest();
+  setLoadingActionsVisible(false);
+  elements.loadingState?.classList.add('hidden');
+  elements.permissionState?.classList.add('hidden');
+  openModal();
 }
 
 /**
@@ -161,38 +225,102 @@ function redirectToLocation(coords) {
 /**
  * Request user's location
  */
-function requestLocation({ showLoading = true, onSuccess } = {}) {
-  if (showLoading) {
-    showState(elements.loadingState);
-    if (elements.loadingText) {
-      elements.loadingText.textContent = 'Detecting your location...';
+function requestLocation({ showLoading: shouldShowLoading = true, onSuccess } = {}) {
+  if (!navigator.geolocation) {
+    if (shouldShowLoading) {
+      showPermissionError('Geolocation is not supported in this browser.');
     }
+    return;
   }
 
+  locationRequestId += 1;
+  const requestId = locationRequestId;
   const handleSuccess = onSuccess || ((coords) => redirectToLocation(coords));
+  const attempts = shouldShowLoading
+    ? [CONFIG.GEOLOCATION_QUICK, CONFIG.GEOLOCATION_FRESH]
+    : [CONFIG.GEOLOCATION_QUICK];
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      if (showLoading && elements.loadingText) {
-        elements.loadingText.textContent = 'Loading weather...';
-      }
-      handleSuccess(position.coords);
-    },
-    (error) => {
-      if (!showLoading) return;
-      
-      if (error.code === error.PERMISSION_DENIED) {
-        showState(elements.permissionState);
-      } else {
-        if (elements.permissionError) {
-          elements.permissionError.textContent = error.message || 'Unable to get location';
-          elements.permissionError.classList.remove('hidden');
+  if (shouldShowLoading) {
+    resetPermissionUI();
+    showLoading(attempts[0].label, { showLocationActions: true });
+  }
+
+  const runAttempt = (index) => {
+    const attempt = attempts[index];
+    if (shouldShowLoading && attempt?.label) {
+      setLoadingText(attempt.label);
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (requestId !== locationRequestId) return;
+        if (shouldShowLoading) {
+          setLoadingText('Loading weather...');
         }
-        showState(elements.permissionState);
+        handleSuccess(position.coords);
+      },
+      (error) => {
+        if (requestId !== locationRequestId) return;
+        if (!shouldShowLoading) return;
+
+        if (error.code === error.PERMISSION_DENIED) {
+          showPermissionError(
+            'Location permission was denied. Enable it in your browser settings to use current location.'
+          );
+          return;
+        }
+
+        const shouldRetry =
+          (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE) &&
+          index + 1 < attempts.length;
+        if (shouldRetry) {
+          runAttempt(index + 1);
+          return;
+        }
+
+        let message = error.message || 'Unable to get location.';
+        if (error.code === error.TIMEOUT) {
+          message =
+            'Location is taking longer than expected. Turn on location and try again, or search manually.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          message = 'Location is unavailable. Check device location settings and try again.';
+        }
+        showPermissionError(message);
+      },
+      attempt?.options
+    );
+  };
+
+  runAttempt(0);
+}
+
+function initLocationAccess() {
+  if (!navigator.geolocation) {
+    showPermissionError('Geolocation is not supported in this browser.');
+    return;
+  }
+
+  if (!navigator.permissions?.query) {
+    requestLocation();
+    return;
+  }
+
+  navigator.permissions
+    .query({ name: 'geolocation' })
+    .then((status) => {
+      if (status.state === 'granted') {
+        requestLocation();
+      } else if (status.state === 'denied') {
+        showPermissionError(
+          'Location permission is blocked. Enable it in your browser settings to use current location.'
+        );
+      } else {
+        showPermissionPrompt();
       }
-    },
-    CONFIG.GEOLOCATION_OPTIONS
-  );
+    })
+    .catch(() => {
+      requestLocation();
+    });
 }
 
 /**
@@ -603,12 +731,9 @@ async function handleRefreshAction(action, locationKey) {
   const isDelete = action === 'delete';
 
   closeRefreshModal();
-  if (elements.loadingText) {
-    elements.loadingText.textContent = isDelete
-      ? 'Removing cached data...'
-      : 'Refreshing weather data...';
-  }
-  showState(elements.loadingState);
+  showLoading(
+    isDelete ? 'Removing cached data...' : 'Refreshing weather data...'
+  );
 
   try {
     const response = await fetch('/refresh', {
@@ -656,24 +781,18 @@ function initWeatherApp(options = {}) {
 
   // Initial load logic
   if (!hasWeatherData && !hasLocationParams) {
-    if (!navigator.geolocation) {
-      showState(elements.permissionState);
-      if (elements.permissionError) {
-        elements.permissionError.textContent = 'Geolocation is not supported';
-        elements.permissionError.classList.remove('hidden');
-      }
-    } else {
-      requestLocation();
-    }
+    initLocationAccess();
   } else if (usedCachedLocation && navigator.geolocation) {
     requestLocation({ showLoading: false, onSuccess: checkForLocationSwitch });
   }
 
   // Event Listeners
   elements.grantLocationBtn?.addEventListener('click', () => {
-    elements.permissionError?.classList.add('hidden');
+    resetPermissionUI();
     requestLocation();
   });
+  elements.permissionSearchBtn?.addEventListener('click', openManualSearch);
+  elements.loadingSearchBtn?.addEventListener('click', openManualSearch);
 
   elements.toggleLocationBtn?.addEventListener('click', openModal);
   elements.closeModalBtn?.addEventListener('click', closeModal);
