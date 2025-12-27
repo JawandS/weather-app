@@ -55,5 +55,13 @@
     usedCachedLocation: {{ 'true' if used_cached_location else 'false' }},
     hasLocationParams: (urlParams.has('lat') && urlParams.has('lon')) || hasAddressParam,
   });
+
+  // Apply dynamic weather background
+  {% if forecast and forecast.period %}
+  WeatherApp.applyWeatherTheme(
+    '{{ forecast.period.shortForecast | e }}',
+    {{ 'true' if forecast.period.isDaytime else 'false' }}
+  );
+  {% endif %}
 </script>
 {% endblock %}

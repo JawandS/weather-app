@@ -301,6 +301,224 @@ function initWeatherApp(options = {}) {
   });
 }
 
+/**
+ * Determine weather theme based on forecast text
+ */
+function getWeatherTheme(shortForecast, isDaytime = true) {
+  if (!shortForecast) return null;
+  
+  const forecast = shortForecast.toLowerCase();
+  
+  // Check for specific weather conditions (order matters - more specific first)
+  if (forecast.includes('thunder') || forecast.includes('storm')) {
+    return 'storm';
+  }
+  if (forecast.includes('snow') || forecast.includes('blizzard') || forecast.includes('flurr')) {
+    return 'snow';
+  }
+  if (forecast.includes('rain') || forecast.includes('shower') || forecast.includes('drizzle')) {
+    return 'rain';
+  }
+  if (forecast.includes('fog') || forecast.includes('mist') || forecast.includes('haze') || forecast.includes('smoke')) {
+    return 'fog';
+  }
+  if (forecast.includes('wind') && !forecast.includes('sun') && !forecast.includes('clear')) {
+    return 'wind';
+  }
+  if (forecast.includes('cloud') || forecast.includes('overcast')) {
+    return 'cloudy';
+  }
+  if (forecast.includes('hot') || forecast.includes('heat')) {
+    return 'hot';
+  }
+  if (forecast.includes('sun') || forecast.includes('clear') || forecast.includes('fair')) {
+    return isDaytime ? 'clear' : 'night';
+  }
+  
+  // Default based on time of day
+  return isDaytime ? null : 'night';
+}
+
+/**
+ * Create weather animation particles
+ */
+function createWeatherEffects(theme) {
+  const container = document.getElementById('weather-effects');
+  if (!container) return;
+  
+  // Clear existing effects
+  container.innerHTML = '';
+  
+  // Check for reduced motion preference
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+  
+  switch (theme) {
+    case 'rain':
+    case 'storm':
+      createRainEffect(container, theme === 'storm');
+      break;
+    case 'snow':
+      createSnowEffect(container);
+      break;
+    case 'fog':
+      createFogEffect(container);
+      break;
+    case 'clear':
+      createSunEffect(container);
+      break;
+    case 'night':
+      createStarsEffect(container);
+      break;
+    case 'wind':
+      createWindEffect(container);
+      break;
+    case 'hot':
+      createHeatEffect(container);
+      break;
+  }
+}
+
+function createRainEffect(container, isStorm) {
+  const dropCount = isStorm ? 120 : 80;
+  
+  for (let i = 0; i < dropCount; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'weather-particle rain-drop';
+    drop.style.left = `${Math.random() * 100}%`;
+    drop.style.animationDuration = `${0.4 + Math.random() * 0.4}s`;
+    drop.style.animationDelay = `${Math.random() * 2}s`;
+    drop.style.opacity = 0.5 + Math.random() * 0.5;
+    // Vary the height for depth perception
+    const scale = 0.5 + Math.random() * 0.5;
+    drop.style.transform = `scaleY(${scale})`;
+    container.appendChild(drop);
+  }
+  
+  // Add rain mist at the bottom
+  const mist = document.createElement('div');
+  mist.className = 'weather-particle rain-mist';
+  container.appendChild(mist);
+  
+  if (isStorm) {
+    // Add multiple lightning flashes with different timings
+    for (let i = 0; i < 2; i++) {
+      const flash = document.createElement('div');
+      flash.className = 'lightning-flash';
+      flash.style.animationDelay = `${i * 3 + Math.random() * 2}s`;
+      container.appendChild(flash);
+    }
+  }
+}
+
+function createSnowEffect(container) {
+  const flakeCount = 40;
+  
+  for (let i = 0; i < flakeCount; i++) {
+    const flake = document.createElement('div');
+    flake.className = 'weather-particle snowflake';
+    flake.style.left = `${Math.random() * 100}%`;
+    flake.style.width = `${4 + Math.random() * 6}px`;
+    flake.style.height = flake.style.width;
+    flake.style.animationDuration = `${5 + Math.random() * 10}s`;
+    flake.style.animationDelay = `${Math.random() * 5}s`;
+    flake.style.opacity = 0.4 + Math.random() * 0.4;
+    container.appendChild(flake);
+  }
+}
+
+function createFogEffect(container) {
+  for (let i = 0; i < 3; i++) {
+    const fog = document.createElement('div');
+    fog.className = 'weather-particle fog-layer';
+    container.appendChild(fog);
+  }
+}
+
+function createSunEffect(container) {
+  // Add sun glow
+  const glow = document.createElement('div');
+  glow.className = 'weather-particle sun-glow';
+  container.appendChild(glow);
+  
+  // Add sun rays
+  for (let i = 0; i < 3; i++) {
+    const ray = document.createElement('div');
+    ray.className = 'weather-particle sun-ray';
+    container.appendChild(ray);
+  }
+}
+
+function createStarsEffect(container) {
+  // Add moon glow
+  const moon = document.createElement('div');
+  moon.className = 'weather-particle moon-glow';
+  container.appendChild(moon);
+  
+  // Regular stars
+  const starCount = 80;
+  for (let i = 0; i < starCount; i++) {
+    const star = document.createElement('div');
+    star.className = 'weather-particle star';
+    // Make some stars brighter
+    if (Math.random() > 0.85) {
+      star.classList.add('bright');
+    }
+    star.style.left = `${Math.random() * 100}%`;
+    star.style.top = `${Math.random() * 70}%`;
+    star.style.animationDuration = `${2 + Math.random() * 4}s`;
+    star.style.animationDelay = `${Math.random() * 4}s`;
+    container.appendChild(star);
+  }
+  
+  // Shooting stars
+  for (let i = 0; i < 3; i++) {
+    const shootingStar = document.createElement('div');
+    shootingStar.className = 'weather-particle shooting-star';
+    shootingStar.style.left = `${20 + Math.random() * 40}%`;
+    shootingStar.style.top = `${5 + Math.random() * 20}%`;
+    shootingStar.style.animationDelay = `${i * 4 + Math.random() * 3}s`;
+    shootingStar.style.animationDuration = `${2.5 + Math.random() * 1.5}s`;
+    container.appendChild(shootingStar);
+  }
+}
+
+function createWindEffect(container) {
+  const streakCount = 15;
+  
+  for (let i = 0; i < streakCount; i++) {
+    const streak = document.createElement('div');
+    streak.className = 'weather-particle wind-streak';
+    streak.style.top = `${10 + Math.random() * 80}%`;
+    streak.style.width = `${50 + Math.random() * 150}px`;
+    streak.style.animationDuration = `${1 + Math.random() * 2}s`;
+    streak.style.animationDelay = `${Math.random() * 3}s`;
+    container.appendChild(streak);
+  }
+}
+
+function createHeatEffect(container) {
+  const wave = document.createElement('div');
+  wave.className = 'weather-particle heat-wave';
+  container.appendChild(wave);
+}
+
+/**
+ * Apply weather-based background theme
+ */
+function applyWeatherTheme(shortForecast, isDaytime = true) {
+  const theme = getWeatherTheme(shortForecast, isDaytime);
+  if (theme) {
+    document.body.setAttribute('data-weather', theme);
+    createWeatherEffects(theme);
+  } else {
+    document.body.removeAttribute('data-weather');
+    const container = document.getElementById('weather-effects');
+    if (container) container.innerHTML = '';
+  }
+}
+
 // Export for use in templates
 window.WeatherApp = {
   init: initWeatherApp,
@@ -308,4 +526,6 @@ window.WeatherApp = {
   openModal,
   closeModal,
   requestLocation,
+  applyWeatherTheme,
+  getWeatherTheme,
 };
