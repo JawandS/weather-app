@@ -842,18 +842,15 @@ function createWeatherEffects(theme) {
 }
 
 function createRainEffect(container, isStorm) {
-  const dropCount = isStorm ? 120 : 80;
+  const dropCount = isStorm ? 60 : 40;
   
   for (let i = 0; i < dropCount; i++) {
     const drop = document.createElement('div');
     drop.className = 'weather-particle rain-drop';
     drop.style.left = `${Math.random() * 100}%`;
-    drop.style.animationDuration = `${0.4 + Math.random() * 0.4}s`;
-    drop.style.animationDelay = `${Math.random() * 2}s`;
-    drop.style.opacity = 0.5 + Math.random() * 0.5;
-    // Vary the height for depth perception
-    const scale = 0.5 + Math.random() * 0.5;
-    drop.style.transform = `scaleY(${scale})`;
+    drop.style.animationDuration = `${0.5 + Math.random() * 0.5}s`;
+    drop.style.animationDelay = `${Math.random() * 3}s`;
+    drop.style.opacity = 0.3 + Math.random() * 0.4;
     container.appendChild(drop);
   }
   
@@ -863,28 +860,26 @@ function createRainEffect(container, isStorm) {
   container.appendChild(mist);
   
   if (isStorm) {
-    // Add multiple lightning flashes with different timings
-    for (let i = 0; i < 2; i++) {
-      const flash = document.createElement('div');
-      flash.className = 'lightning-flash';
-      flash.style.animationDelay = `${i * 3 + Math.random() * 2}s`;
-      container.appendChild(flash);
-    }
+    // Add lightning flash
+    const flash = document.createElement('div');
+    flash.className = 'lightning-flash';
+    flash.style.animationDelay = `${Math.random() * 3}s`;
+    container.appendChild(flash);
   }
 }
 
 function createSnowEffect(container) {
-  const flakeCount = 40;
+  const flakeCount = 25;
   
   for (let i = 0; i < flakeCount; i++) {
     const flake = document.createElement('div');
     flake.className = 'weather-particle snowflake';
     flake.style.left = `${Math.random() * 100}%`;
-    flake.style.width = `${4 + Math.random() * 6}px`;
+    flake.style.width = `${3 + Math.random() * 5}px`;
     flake.style.height = flake.style.width;
-    flake.style.animationDuration = `${5 + Math.random() * 10}s`;
-    flake.style.animationDelay = `${Math.random() * 5}s`;
-    flake.style.opacity = 0.4 + Math.random() * 0.4;
+    flake.style.animationDuration = `${6 + Math.random() * 10}s`;
+    flake.style.animationDelay = `${Math.random() * 6}s`;
+    flake.style.opacity = 0.3 + Math.random() * 0.4;
     container.appendChild(flake);
   }
 }
@@ -917,44 +912,42 @@ function createStarsEffect(container) {
   moon.className = 'weather-particle moon-glow';
   container.appendChild(moon);
   
-  // Regular stars
-  const starCount = 80;
+  // Regular stars - reduced count for subtlety
+  const starCount = 50;
   for (let i = 0; i < starCount; i++) {
     const star = document.createElement('div');
     star.className = 'weather-particle star';
     // Make some stars brighter
-    if (Math.random() > 0.85) {
+    if (Math.random() > 0.9) {
       star.classList.add('bright');
     }
     star.style.left = `${Math.random() * 100}%`;
-    star.style.top = `${Math.random() * 70}%`;
-    star.style.animationDuration = `${2 + Math.random() * 4}s`;
-    star.style.animationDelay = `${Math.random() * 4}s`;
+    star.style.top = `${Math.random() * 60}%`;
+    star.style.animationDuration = `${3 + Math.random() * 4}s`;
+    star.style.animationDelay = `${Math.random() * 5}s`;
     container.appendChild(star);
   }
   
-  // Shooting stars
-  for (let i = 0; i < 3; i++) {
-    const shootingStar = document.createElement('div');
-    shootingStar.className = 'weather-particle shooting-star';
-    shootingStar.style.left = `${20 + Math.random() * 40}%`;
-    shootingStar.style.top = `${5 + Math.random() * 20}%`;
-    shootingStar.style.animationDelay = `${i * 4 + Math.random() * 3}s`;
-    shootingStar.style.animationDuration = `${2.5 + Math.random() * 1.5}s`;
-    container.appendChild(shootingStar);
-  }
+  // Single subtle shooting star
+  const shootingStar = document.createElement('div');
+  shootingStar.className = 'weather-particle shooting-star';
+  shootingStar.style.left = `${20 + Math.random() * 40}%`;
+  shootingStar.style.top = `${5 + Math.random() * 15}%`;
+  shootingStar.style.animationDelay = `${5 + Math.random() * 5}s`;
+  shootingStar.style.animationDuration = `${3 + Math.random() * 2}s`;
+  container.appendChild(shootingStar);
 }
 
 function createWindEffect(container) {
-  const streakCount = 15;
+  const streakCount = 8;
   
   for (let i = 0; i < streakCount; i++) {
     const streak = document.createElement('div');
     streak.className = 'weather-particle wind-streak';
     streak.style.top = `${10 + Math.random() * 80}%`;
-    streak.style.width = `${50 + Math.random() * 150}px`;
-    streak.style.animationDuration = `${1 + Math.random() * 2}s`;
-    streak.style.animationDelay = `${Math.random() * 3}s`;
+    streak.style.width = `${50 + Math.random() * 100}px`;
+    streak.style.animationDuration = `${2 + Math.random() * 2}s`;
+    streak.style.animationDelay = `${Math.random() * 4}s`;
     container.appendChild(streak);
   }
 }

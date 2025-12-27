@@ -3,10 +3,12 @@
   --bg-2: #0a3d8f;
   --bg-3: #1d86ff;
   --accent: #6bd3ff;
-  --glass: rgba(255, 255, 255, 0.12);
-  --glass-strong: rgba(255, 255, 255, 0.18);
-  --glass-border: rgba(255, 255, 255, 0.25);
-  --text-muted: rgba(255, 255, 255, 0.78);
+  --glass: rgba(255, 255, 255, 0.15);
+  --glass-strong: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.28);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.7);
   --orb-1: rgba(125, 211, 252, 0.8);
   --orb-2: rgba(82, 145, 255, 0.8);
   --orb-3: rgba(74, 226, 255, 0.6);
@@ -18,9 +20,12 @@
   --bg-2: #0ea5e9;
   --bg-3: #38bdf8;
   --accent: #fcd34d;
-  --orb-1: rgba(252, 211, 77, 0.6);
-  --orb-2: rgba(251, 191, 36, 0.5);
-  --orb-3: rgba(253, 224, 71, 0.4);
+  --glass: rgba(255, 255, 255, 0.18);
+  --glass-strong: rgba(255, 255, 255, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --orb-1: rgba(252, 211, 77, 0.5);
+  --orb-2: rgba(251, 191, 36, 0.4);
+  --orb-3: rgba(253, 224, 71, 0.35);
 }
 
 /* Weather Theme: Cloudy */
@@ -28,10 +33,13 @@
   --bg-1: #1e293b;
   --bg-2: #475569;
   --bg-3: #64748b;
-  --accent: #94a3b8;
-  --orb-1: rgba(148, 163, 184, 0.4);
-  --orb-2: rgba(100, 116, 139, 0.35);
-  --orb-3: rgba(203, 213, 225, 0.3);
+  --accent: #e2e8f0;
+  --glass: rgba(255, 255, 255, 0.16);
+  --glass-strong: rgba(255, 255, 255, 0.24);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --orb-1: rgba(148, 163, 184, 0.3);
+  --orb-2: rgba(100, 116, 139, 0.25);
+  --orb-3: rgba(203, 213, 225, 0.2);
 }
 
 /* Weather Theme: Rainy */
@@ -40,11 +48,12 @@
   --bg-2: #1a3a52;
   --bg-3: #2d5a7b;
   --accent: #7dd3fc;
-  --orb-1: rgba(56, 189, 248, 0.3);
-  --orb-2: rgba(14, 165, 233, 0.25);
-  --orb-3: rgba(2, 132, 199, 0.2);
-  --glass: rgba(255, 255, 255, 0.1);
-  --glass-strong: rgba(255, 255, 255, 0.14);
+  --glass: rgba(255, 255, 255, 0.14);
+  --glass-strong: rgba(255, 255, 255, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --orb-1: rgba(56, 189, 248, 0.25);
+  --orb-2: rgba(14, 165, 233, 0.2);
+  --orb-3: rgba(2, 132, 199, 0.15);
 }
 
 /* Weather Theme: Stormy/Thunderstorm */
@@ -52,12 +61,13 @@
   --bg-1: #0a0a14;
   --bg-2: #151525;
   --bg-3: #252540;
-  --accent: #a78bfa;
-  --orb-1: rgba(139, 92, 246, 0.3);
-  --orb-2: rgba(88, 28, 135, 0.4);
-  --orb-3: rgba(250, 204, 21, 0.15);
-  --glass: rgba(255, 255, 255, 0.08);
-  --glass-strong: rgba(255, 255, 255, 0.12);
+  --accent: #c4b5fd;
+  --glass: rgba(255, 255, 255, 0.12);
+  --glass-strong: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --orb-1: rgba(139, 92, 246, 0.2);
+  --orb-2: rgba(88, 28, 135, 0.25);
+  --orb-3: rgba(250, 204, 21, 0.1);
 }
 
 /* Weather Theme: Snow */
@@ -66,9 +76,12 @@
   --bg-2: #4a6fa5;
   --bg-3: #7b9ec9;
   --accent: #f1f5f9;
-  --orb-1: rgba(226, 232, 240, 0.5);
-  --orb-2: rgba(203, 213, 224, 0.4);
-  --orb-3: rgba(241, 245, 249, 0.45);
+  --glass: rgba(255, 255, 255, 0.2);
+  --glass-strong: rgba(255, 255, 255, 0.28);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  --orb-1: rgba(226, 232, 240, 0.4);
+  --orb-2: rgba(203, 213, 224, 0.3);
+  --orb-3: rgba(241, 245, 249, 0.35);
 }
 
 /* Weather Theme: Foggy/Misty */
@@ -76,10 +89,13 @@
   --bg-1: #4a5568;
   --bg-2: #636f7f;
   --bg-3: #8896a4;
-  --accent: #cbd5e0;
-  --orb-1: rgba(203, 213, 224, 0.4);
-  --orb-2: rgba(160, 174, 192, 0.3);
-  --orb-3: rgba(226, 232, 240, 0.35);
+  --accent: #e2e8f0;
+  --glass: rgba(255, 255, 255, 0.18);
+  --glass-strong: rgba(255, 255, 255, 0.26);
+  --glass-border: rgba(255, 255, 255, 0.32);
+  --orb-1: rgba(203, 213, 224, 0.3);
+  --orb-2: rgba(160, 174, 192, 0.25);
+  --orb-3: rgba(226, 232, 240, 0.25);
 }
 
 /* Weather Theme: Night/Clear Night */
@@ -88,12 +104,12 @@
   --bg-2: #0f172a;
   --bg-3: #1e293b;
   --accent: #c4b5fd;
-  --orb-1: rgba(99, 102, 241, 0.25);
-  --orb-2: rgba(139, 92, 246, 0.2);
-  --orb-3: rgba(168, 85, 247, 0.15);
-  --glass: rgba(255, 255, 255, 0.08);
-  --glass-strong: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass: rgba(255, 255, 255, 0.1);
+  --glass-strong: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --orb-1: rgba(99, 102, 241, 0.2);
+  --orb-2: rgba(139, 92, 246, 0.15);
+  --orb-3: rgba(168, 85, 247, 0.12);
 }
 
 /* Weather Theme: Hot */
@@ -101,10 +117,13 @@
   --bg-1: #7c2d12;
   --bg-2: #c2410c;
   --bg-3: #ea580c;
-  --accent: #fbbf24;
-  --orb-1: rgba(251, 191, 36, 0.7);
-  --orb-2: rgba(251, 146, 60, 0.6);
-  --orb-3: rgba(252, 211, 77, 0.5);
+  --accent: #fef08a;
+  --glass: rgba(0, 0, 0, 0.2);
+  --glass-strong: rgba(0, 0, 0, 0.28);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --orb-1: rgba(251, 191, 36, 0.5);
+  --orb-2: rgba(251, 146, 60, 0.4);
+  --orb-3: rgba(252, 211, 77, 0.35);
 }
 
 /* Weather Theme: Windy */
@@ -112,10 +131,13 @@
   --bg-1: #134e5e;
   --bg-2: #2d8892;
   --bg-3: #71b280;
-  --accent: #a8e6cf;
-  --orb-1: rgba(168, 230, 207, 0.5);
-  --orb-2: rgba(113, 178, 128, 0.4);
-  --orb-3: rgba(45, 136, 146, 0.35);
+  --accent: #d1fae5;
+  --glass: rgba(255, 255, 255, 0.16);
+  --glass-strong: rgba(255, 255, 255, 0.24);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --orb-1: rgba(168, 230, 207, 0.4);
+  --orb-2: rgba(113, 178, 128, 0.3);
+  --orb-3: rgba(45, 136, 146, 0.25);
 }
 
 body {
@@ -135,24 +157,40 @@ h3 {
 .glass-card {
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 25px 60px rgba(6, 24, 70, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .glass-panel {
   background: var(--glass-strong);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 10px 30px rgba(10, 40, 100, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .glass-panel-subtle {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Text readability enhancements */
+.text-readable {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure high contrast text in cards */
+.glass-card,
+.glass-panel {
+  color: var(--text-primary, #ffffff);
+}
+
+.glass-card p,
+.glass-panel p {
+  color: var(--text-secondary, rgba(255, 255, 255, 0.9));
 }
 
 .chart-svg {
@@ -371,9 +409,9 @@ h3 {
 .orb {
   position: absolute;
   border-radius: 9999px;
-  opacity: 0.7;
+  opacity: 0.5;
   mix-blend-mode: screen;
-  animation: float 20s ease-in-out infinite;
+  animation: float 25s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -535,7 +573,8 @@ h3 {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
+  opacity: 0.7;
 }
 
 .weather-particle {
@@ -546,18 +585,16 @@ h3 {
 /* Rain Effect */
 [data-weather="rain"] .rain-drop,
 [data-weather="storm"] .rain-drop {
-  width: 3px;
-  height: 20px;
-  background: linear-gradient(to bottom, transparent 0%, rgba(147, 197, 253, 0.4) 30%, rgba(147, 197, 253, 0.8) 100%);
+  width: 2px;
+  height: 18px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(147, 197, 253, 0.3) 30%, rgba(147, 197, 253, 0.6) 100%);
   border-radius: 0 0 2px 2px;
   animation: rain-fall linear infinite;
-  box-shadow: 0 0 3px rgba(147, 197, 253, 0.3);
 }
 
 [data-weather="storm"] .rain-drop {
-  height: 25px;
-  background: linear-gradient(to bottom, transparent 0%, rgba(186, 230, 253, 0.5) 30%, rgba(186, 230, 253, 0.9) 100%);
-  box-shadow: 0 0 4px rgba(186, 230, 253, 0.4);
+  height: 22px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(186, 230, 253, 0.4) 30%, rgba(186, 230, 253, 0.7) 100%);
 }
 
 @keyframes rain-fall {
