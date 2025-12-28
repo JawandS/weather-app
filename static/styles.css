@@ -196,6 +196,8 @@ h3 {
 .chart-svg {
   width: 100%;
   height: 100%;
+  touch-action: none;
+  pointer-events: none;
 }
 
 .chart-container {
@@ -204,6 +206,7 @@ h3 {
   touch-action: none;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .chart-tooltip {

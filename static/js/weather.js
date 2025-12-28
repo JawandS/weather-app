@@ -90,6 +90,7 @@ let locationRequestId = 0;
 let dailyDetailsMap = new Map();
 let currentDayDetails = null;
 let currentDayUnit = '';
+let activeTouchChart = null; // Track which chart is being touched
 
 // ============ LocalStorage Cache Management ============
 
@@ -1147,30 +1148,45 @@ function initWeatherApp(options = {}) {
     hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
   });
 
-  // Mobile touch events for temperature chart
+  // Mobile touch events - use document-level touchmove for smooth dragging
   tempContainer?.addEventListener('touchstart', (e) => {
-    e.preventDefault();
+    activeTouchChart = 'temp';
     handleTempChartMove(e);
-  }, { passive: false });
-  tempContainer?.addEventListener('touchmove', (e) => {
+  }, { passive: true });
+
+  precipContainer?.addEventListener('touchstart', (e) => {
+    activeTouchChart = 'precip';
+    handlePrecipChartMove(e);
+  }, { passive: true });
+
+  // Global touchmove handler for smooth dragging across charts
+  document.addEventListener('touchmove', (e) => {
+    if (!activeTouchChart) return;
     e.preventDefault();
-    handleTempChartMove(e);
+    if (activeTouchChart === 'temp') {
+      handleTempChartMove(e);
+    } else if (activeTouchChart === 'precip') {
+      handlePrecipChartMove(e);
+    }
   }, { passive: false });
-  tempContainer?.addEventListener('touchend', () => {
-    hideChartTooltip(elements.dayDetailTempTooltip, elements.dayDetailTempMarker);
+
+  // Global touchend handler
+  document.addEventListener('touchend', () => {
+    if (activeTouchChart === 'temp') {
+      hideChartTooltip(elements.dayDetailTempTooltip, elements.dayDetailTempMarker);
+    } else if (activeTouchChart === 'precip') {
+      hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
+    }
+    activeTouchChart = null;
   });
 
-  // Mobile touch events for precipitation chart
-  precipContainer?.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    handlePrecipChartMove(e);
-  }, { passive: false });
-  precipContainer?.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    handlePrecipChartMove(e);
-  }, { passive: false });
-  precipContainer?.addEventListener('touchend', () => {
-    hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
+  document.addEventListener('touchcancel', () => {
+    if (activeTouchChart === 'temp') {
+      hideChartTooltip(elements.dayDetailTempTooltip, elements.dayDetailTempMarker);
+    } else if (activeTouchChart === 'precip') {
+      hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
+    }
+    activeTouchChart = null;
   });
 }
 
