@@ -24,7 +24,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     {% block head %}{% endblock %}
   </head>
-  <body class="min-h-screen text-white antialiased">
+  <body class="min-h-screen text-white antialiased" {% block body_attrs %}{% endblock %}>
     <div class="relative min-h-screen overflow-hidden">
       <!-- Background Effects -->
       <div class="absolute inset-0">

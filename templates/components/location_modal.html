@@ -1,5 +1,6 @@
 {# Location Search Modal Component #}
 {# Variables: address (optional) #}
+{# Saved locations are now managed client-side in localStorage #}
 <div id="location-modal" class="modal-overlay hidden">
   <div class="modal-backdrop" id="modal-backdrop"></div>
   <div class="modal-content glass-card rounded-2xl p-5 sm:p-6 w-full max-w-sm mx-3 sm:mx-4">
@@ -35,32 +36,12 @@
         Use current location
       </button>
 
-      {% if cached_locations %}
-      <div class="mt-4">
+      <div id="saved-locations-section" class="mt-4 hidden">
         <p class="text-white/50 text-[10px] sm:text-xs uppercase tracking-widest mb-2">Saved locations</p>
         <div id="location-suggestions" class="space-y-1.5 sm:space-y-2 max-h-48 overflow-y-auto pr-1 -mr-1">
-          {% for location in cached_locations %}
-          {% if location.lat is not none and location.lon is not none %}
-          <button
-            type="button"
-            class="glass-panel-subtle rounded-xl px-3 py-3 sm:py-2 w-full flex items-center justify-between gap-3 text-left hover:bg-white/15 active:bg-white/20 transition-colors min-h-[48px]"
-            data-location-lat="{{ location.lat }}"
-            data-location-lon="{{ location.lon }}"
-            data-location-label="{{ location.label }}"
-          >
-            <div class="min-w-0">
-              <p class="text-[13px] sm:text-sm font-medium truncate">{{ location.label }}</p>
-              <p class="text-[11px] sm:text-xs text-white/50">{{ location.key }}</p>
-            </div>
-            {% if current_location_key and location.key == current_location_key %}
-            <span class="text-[10px] uppercase tracking-widest text-cyan-200/80 flex-shrink-0">Current</span>
-            {% endif %}
-          </button>
-          {% endif %}
-          {% endfor %}
+          <!-- Populated dynamically from localStorage by JavaScript -->
         </div>
       </div>
-      {% endif %}
     </form>
   </div>
 </div>

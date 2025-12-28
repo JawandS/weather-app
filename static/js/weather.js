@@ -2,6 +2,12 @@
  * Weather App - Location & UI Management
  */
 
+// LocalStorage Keys
+const STORAGE_KEYS = {
+  LOCATIONS: 'weather_saved_locations',
+  LAST_LOCATION: 'weather_last_location',
+};
+
 // DOM Elements
 const elements = {
   loadingState: document.getElementById('loading-state'),
@@ -80,6 +86,196 @@ let locationRequestId = 0;
 let dailyDetailsMap = new Map();
 let currentDayDetails = null;
 let currentDayUnit = '';
+
+// ============ LocalStorage Cache Management ============
+
+/**
+ * Get today's date key for cache expiration
+ */
+function getTodayKey() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Load saved locations from localStorage
+ */
+function getSavedLocations() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.LOCATIONS);
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    // Check if cache is from today
+    if (parsed.date !== getTodayKey()) {
+      // Cache is stale, clear it
+      localStorage.removeItem(STORAGE_KEYS.LOCATIONS);
+      return [];
+    }
+    return Array.isArray(parsed.locations) ? parsed.locations : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Save a location to localStorage
+ */
+function saveLocation(locationKey, label, lat, lon) {
+  if (!locationKey) return;
+  try {
+    const locations = getSavedLocations();
+    // Check if location already exists
+    const existingIndex = locations.findIndex((loc) => loc.key === locationKey);
+    const locationData = {
+      key: locationKey,
+      label: label || locationKey,
+      lat: Number(lat),
+      lon: Number(lon),
+      updatedAt: Date.now(),
+    };
+    
+    if (existingIndex >= 0) {
+      locations[existingIndex] = locationData;
+    } else {
+      locations.push(locationData);
+    }
+    
+    // Sort by label
+    locations.sort((a, b) => a.label.toLowerCase().localeCompare(b.label.toLowerCase()));
+    
+    localStorage.setItem(
+      STORAGE_KEYS.LOCATIONS,
+      JSON.stringify({ date: getTodayKey(), locations })
+    );
+  } catch {
+    // localStorage might be full or disabled
+  }
+}
+
+/**
+ * Remove a location from localStorage
+ */
+function removeLocation(locationKey) {
+  if (!locationKey) return;
+  try {
+    const locations = getSavedLocations();
+    const filtered = locations.filter((loc) => loc.key !== locationKey);
+    localStorage.setItem(
+      STORAGE_KEYS.LOCATIONS,
+      JSON.stringify({ date: getTodayKey(), locations: filtered })
+    );
+  } catch {
+    // Ignore errors
+  }
+}
+
+/**
+ * Clear all saved locations from localStorage
+ */
+function clearAllLocations() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.LOCATIONS);
+  } catch {
+    // Ignore errors
+  }
+}
+
+/**
+ * Update the locations list UI from localStorage
+ */
+function updateLocationsListUI() {
+  const locations = getSavedLocations();
+  const currentLocationKey = document.body.dataset.currentLocationKey;
+  
+  // Update the suggestions dropdown in the location modal
+  const savedLocationsSection = document.getElementById('saved-locations-section');
+  if (elements.locationSuggestions) {
+    if (locations.length === 0) {
+      if (savedLocationsSection) {
+        savedLocationsSection.classList.add('hidden');
+      }
+    } else {
+      if (savedLocationsSection) {
+        savedLocationsSection.classList.remove('hidden');
+      }
+      elements.locationSuggestions.innerHTML = locations
+        .map(
+          (loc) => `
+          <button
+            type="button"
+            class="glass-panel-subtle rounded-xl px-3 py-3 sm:py-2 w-full flex items-center justify-between gap-3 text-left hover:bg-white/15 active:bg-white/20 transition-colors min-h-[48px]"
+            data-location-lat="${loc.lat}"
+            data-location-lon="${loc.lon}"
+            data-location-label="${loc.label}">
+            <div class="min-w-0">
+              <p class="text-[13px] sm:text-sm font-medium truncate">${loc.label}</p>
+              <p class="text-[11px] sm:text-xs text-white/50">${loc.key}</p>
+            </div>
+            ${loc.key === currentLocationKey ? '<span class="text-[10px] uppercase tracking-widest text-cyan-200/80 flex-shrink-0">Current</span>' : ''}
+          </button>
+        `
+        )
+        .join('');
+    }
+  }
+  
+  // Update the refresh modal location list
+  if (elements.refreshLocationList) {
+    if (locations.length === 0) {
+      elements.refreshLocationList.innerHTML = '<p class="text-[13px] sm:text-xs text-white/60">No saved locations yet.</p>';
+    } else {
+      elements.refreshLocationList.innerHTML = locations
+        .map(
+          (loc) => `
+          <div class="glass-panel-subtle rounded-xl p-3 flex flex-col gap-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="text-[13px] sm:text-sm font-medium">${loc.label}</p>
+                  ${loc.key === currentLocationKey ? '<span class="text-[9px] sm:text-[10px] uppercase tracking-widest text-cyan-200/80">Current</span>' : ''}
+                </div>
+                <p class="text-[11px] sm:text-xs text-white/50 truncate">${loc.key}</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="btn-secondary rounded-lg px-3 py-2.5 text-[13px] sm:text-xs flex-1 min-h-[44px]"
+                data-refresh-action="refresh"
+                data-location-key="${loc.key}">
+                Refresh
+              </button>
+              <button
+                type="button"
+                class="btn-secondary rounded-lg px-3 py-2.5 text-[13px] sm:text-xs flex-1 min-h-[44px]"
+                data-refresh-action="delete"
+                data-location-key="${loc.key}">
+                Remove
+              </button>
+            </div>
+          </div>
+        `
+        )
+        .join('');
+    }
+  }
+}
+
+/**
+ * Save current location when weather data is loaded
+ */
+function saveCurrentLocation() {
+  const locationKey = document.body.dataset.currentLocationKey;
+  const locationLabel = document.body.dataset.currentLocationLabel;
+  const lat = document.body.dataset.currentLat;
+  const lon = document.body.dataset.currentLon;
+  
+  if (locationKey && lat && lon) {
+    saveLocation(locationKey, locationLabel || locationKey, lat, lon);
+    updateLocationsListUI();
+  }
+}
+
+// ============ End LocalStorage Cache Management ============
 
 /**
  * Show a specific UI state and hide others
@@ -730,16 +926,40 @@ async function handleRefreshAction(action, locationKey) {
   if (!locationKey) return;
   const isDelete = action === 'delete';
 
+  if (isDelete) {
+    // Remove from localStorage
+    removeLocation(locationKey);
+    updateLocationsListUI();
+    
+    // Also clear server-side API cache
+    try {
+      await fetch('/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location_key: locationKey }),
+      });
+    } catch {
+      // Ignore server errors for delete
+    }
+    
+    // If deleting current location, stay on page
+    const currentLocationKey = document.body.dataset.currentLocationKey;
+    if (locationKey === currentLocationKey) {
+      closeRefreshModal();
+      return;
+    }
+    return;
+  }
+
+  // Refresh action - clear server cache and reload
   closeRefreshModal();
-  showLoading(
-    isDelete ? 'Removing cached data...' : 'Refreshing weather data...'
-  );
+  showLoading('Refreshing weather data...');
 
   try {
     const response = await fetch('/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, location_key: locationKey }),
+      body: JSON.stringify({ location_key: locationKey }),
     });
     if (!response.ok) {
       throw new Error('Refresh failed');
@@ -748,7 +968,7 @@ async function handleRefreshAction(action, locationKey) {
     showState(elements.weatherState);
     openRefreshModal();
     if (elements.refreshStatus) {
-      elements.refreshStatus.textContent = 'Unable to update cache. Please try again.';
+      elements.refreshStatus.textContent = 'Unable to refresh cache. Please try again.';
       elements.refreshStatus.classList.remove('hidden');
     }
     return;
@@ -777,6 +997,14 @@ function initWeatherApp(options = {}) {
   const { hasWeatherData, usedCachedLocation, hasLocationParams, dailyDetails } = options;
   if (Array.isArray(dailyDetails)) {
     dailyDetailsMap = new Map(dailyDetails.map((day) => [day.key, day]));
+  }
+
+  // Initialize localStorage-based location list UI
+  updateLocationsListUI();
+  
+  // If we have weather data, save the current location to localStorage
+  if (hasWeatherData) {
+    saveCurrentLocation();
   }
 
   // Initial load logic

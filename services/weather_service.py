@@ -12,7 +12,6 @@ from utils import (
     get_weather_headers,
     location_group_key,
     parse_iso_datetime,
-    register_location,
     register_location_alias,
     resolve_location_alias,
 )
@@ -356,8 +355,7 @@ def fetch_forecast(lat_value, lon_value):
     except requests.RequestException:
         alerts_error = "Could not reach api.weather.gov."
 
-    if location_key:
-        register_location(location_key, location, lat, lon)
+    # Location registration now happens client-side in localStorage
 
     current_temp = periods[0].get("temperature")
     current_unit = periods[0].get("temperatureUnit")

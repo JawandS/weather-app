@@ -7,10 +7,8 @@ from services.weather_service import fetch_forecast
 from utils import (
     clear_cache,
     clear_location_cache,
-    delete_location_cache,
     format_location_key,
     format_coordinate_alias,
-    list_cached_locations,
     register_location_alias,
 )
 
@@ -70,7 +68,7 @@ def index():
         if forecast and not error:
             current_location_key = forecast.get("location_key")
 
-    cached_locations = list_cached_locations()
+    cached_locations = []  # Locations now managed in browser localStorage
     response = make_response(
         render_template(
             "index.html",
@@ -103,14 +101,11 @@ def index():
 
 @app.route("/refresh", methods=["POST"])
 def refresh_cache():
+    """Clear in-memory API cache for a location (browser handles localStorage)."""
     payload = request.get_json(silent=True) or {}
     location_key = payload.get("location_key") or request.form.get("location_key")
-    action = payload.get("action") or request.form.get("action")
     if location_key:
-        if action == "delete":
-            delete_location_cache(location_key)
-        else:
-            clear_location_cache(location_key)
+        clear_location_cache(location_key)
     else:
         clear_cache()
     return {"status": "ok"}

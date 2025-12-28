@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 
+{% block body_attrs %}
+{% if forecast %}
+data-current-location-key="{{ current_location_key }}"
+data-current-location-label="{{ forecast.location }}"
+data-current-lat="{{ request.args.get('lat', '') }}"
+data-current-lon="{{ request.args.get('lon', '') }}"
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <!-- Loading State -->
 {% include "components/loading.html" %}
