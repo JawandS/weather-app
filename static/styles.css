@@ -201,6 +201,9 @@ h3 {
 .chart-container {
   position: relative;
   cursor: crosshair;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .chart-tooltip {
