@@ -14,6 +14,9 @@ from utils import (
     parse_iso_datetime,
     register_location_alias,
     resolve_location_alias,
+    calculate_distance_miles,
+    calculate_polygon_centroid,
+    calculate_multipolygon_centroid,
 )
 
 WEATHER_GOV_HEADERS = get_weather_headers()
@@ -230,6 +233,50 @@ def build_daily_details(periods, limit=7):
     return daily
 
 
+def _calculate_alert_importance(severity, certainty, urgency):
+    """
+    Calculate an importance score (0-100) for an alert based on severity,
+    certainty, and urgency. Higher scores indicate more critical alerts.
+    
+    Weights: Severity (50%), Certainty (25%), Urgency (25%)
+    """
+    # Severity scores (0-100, weight: 50%)
+    severity_scores = {
+        "Extreme": 100,
+        "Severe": 75,
+        "Moderate": 50,
+        "Minor": 25,
+        "Unknown": 10,
+    }
+    
+    # Certainty scores (0-100, weight: 25%)
+    certainty_scores = {
+        "Observed": 100,
+        "Likely": 80,
+        "Possible": 50,
+        "Unlikely": 20,
+        "Unknown": 10,
+    }
+    
+    # Urgency scores (0-100, weight: 25%)
+    urgency_scores = {
+        "Immediate": 100,
+        "Expected": 75,
+        "Future": 50,
+        "Past": 10,
+        "Unknown": 10,
+    }
+    
+    severity_score = severity_scores.get(severity, 10)
+    certainty_score = certainty_scores.get(certainty, 10)
+    urgency_score = urgency_scores.get(urgency, 10)
+    
+    # Weighted average
+    importance = (severity_score * 0.50) + (certainty_score * 0.25) + (urgency_score * 0.25)
+    
+    return int(round(importance))
+
+
 def fetch_forecast(lat_value, lon_value):
     if isinstance(lat_value, str):
         lat_value = lat_value.strip()
@@ -332,7 +379,8 @@ def fetch_forecast(lat_value, lon_value):
 
     alerts = []
     alerts_error = None
-    alerts_url = f"https://api.weather.gov/alerts/active?point={lat},{lon}"
+    # Filter for actual alerts only (not exercise, system, test, or draft)
+    alerts_url = f"https://api.weather.gov/alerts/active?point={lat},{lon}&status=actual"
     try:
         alerts_data = cached_get_json(
             alerts_url,
@@ -342,14 +390,53 @@ def fetch_forecast(lat_value, lon_value):
         )
         for feature in alerts_data.get("features", []) or []:
             props = feature.get("properties", {}) or {}
+            geometry = feature.get("geometry")
+            severity = props.get("severity")
+            certainty = props.get("certainty")
+            urgency = props.get("urgency")
+            
+            # Calculate importance score (0-100)
+            importance = _calculate_alert_importance(severity, certainty, urgency)
+            
+            # Calculate distance from user location to alert area centroid
+            # If geometry is null but alert was returned for this point, it's nearby (0 mi)
+            distance_miles = 0  # Default to 0 since alert applies to queried location
+            if geometry:
+                geom_type = geometry.get("type")
+                coords = geometry.get("coordinates")
+                centroid_lat, centroid_lon = None, None
+                
+                if geom_type == "Polygon" and coords:
+                    centroid_lat, centroid_lon = calculate_polygon_centroid(coords)
+                elif geom_type == "MultiPolygon" and coords:
+                    centroid_lat, centroid_lon = calculate_multipolygon_centroid(coords)
+                
+                if centroid_lat is not None and centroid_lon is not None:
+                    distance_miles = round(calculate_distance_miles(lat, lon, centroid_lat, centroid_lon))
+            
+            # Get raw ISO timestamps for timeline
+            onset_iso = props.get("onset") or props.get("effective")
+            ends_iso = props.get("ends") or props.get("expires")
+            
             alerts.append(
                 {
                     "title": props.get("headline") or props.get("event"),
-                    "severity": props.get("severity"),
-                    "area": props.get("areaDesc"),
-                    "ends": format_alert_time(props.get("ends")),
+                    "event": props.get("event"),
+                    "severity": severity,
+                    "certainty": certainty,
+                    "urgency": urgency,
+                    "importance": importance,
+                    "distance_miles": distance_miles,
+                    "onset_iso": onset_iso,
+                    "ends_iso": ends_iso,
+                    "onset": format_alert_time(onset_iso),
+                    "ends": format_alert_time(ends_iso),
+                    "description": props.get("description"),
+                    "instruction": props.get("instruction"),
                 }
             )
+        # Sort alerts by importance (highest first)
+        alerts.sort(key=lambda x: x.get("importance", 0), reverse=True)
     except requests.HTTPError:
         alerts_error = "Alerts unavailable."
     except requests.RequestException:

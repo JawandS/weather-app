@@ -4,44 +4,137 @@
 <div class="mb-4 sm:mb-6 space-y-2 sm:space-y-3">
   {% for alert in forecast.alerts %}
   <div class="alert-card glass-card rounded-xl sm:rounded-2xl p-3 sm:p-4 border-l-4 
-    {% if alert.severity == 'Extreme' %}border-l-red-500 bg-red-500/10
-    {% elif alert.severity == 'Severe' %}border-l-orange-500 bg-orange-500/10
-    {% elif alert.severity == 'Moderate' %}border-l-yellow-500 bg-yellow-500/10
+    {% if alert.importance >= 75 %}border-l-red-500 bg-red-500/10
+    {% elif alert.importance >= 50 %}border-l-orange-500 bg-orange-500/10
+    {% elif alert.importance >= 25 %}border-l-yellow-500 bg-yellow-500/10
     {% else %}border-l-blue-400 bg-blue-400/10{% endif %}">
-    <div class="flex items-start gap-2.5 sm:gap-3">
-      <div class="flex-shrink-0 mt-0.5">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5 
-          {% if alert.severity == 'Extreme' %}text-red-400
-          {% elif alert.severity == 'Severe' %}text-orange-400
-          {% elif alert.severity == 'Moderate' %}text-yellow-400
-          {% else %}text-blue-300{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-        </svg>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-3">
-          <div class="flex-1 min-w-0">
-            <span class="inline-block px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full mb-1
-              {% if alert.severity == 'Extreme' %}bg-red-500/30 text-red-200
-              {% elif alert.severity == 'Severe' %}bg-orange-500/30 text-orange-200
-              {% elif alert.severity == 'Moderate' %}bg-yellow-500/30 text-yellow-200
-              {% else %}bg-blue-400/30 text-blue-200{% endif %}">
-              {{ alert.severity }}
-            </span>
-            <p class="font-medium text-[13px] sm:text-sm leading-tight">{{ alert.title }}</p>
-            {% if alert.area %}
-            <p class="text-[11px] sm:text-xs text-white/50 mt-0.5 sm:mt-1 truncate">{{ alert.area }}</p>
+    <div class="flex flex-col gap-2 sm:gap-2.5">
+      {# Top row: badges and distance #}
+      <div class="flex flex-wrap items-center justify-between gap-1.5">
+        <div class="flex flex-wrap items-center gap-1 sm:gap-1.5">
+          {# Severity badge #}
+          <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full
+            {% if alert.severity == 'Extreme' %}bg-red-500/30 text-red-200
+            {% elif alert.severity == 'Severe' %}bg-orange-500/30 text-orange-200
+            {% elif alert.severity == 'Moderate' %}bg-yellow-500/30 text-yellow-200
+            {% else %}bg-blue-400/30 text-blue-200{% endif %}">
+            {{ alert.severity or 'Unknown' }}
+          </span>
+          {# Certainty badge #}
+          <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full bg-white/10 text-white/70">
+            {% if alert.certainty == 'Observed' %}
+            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="5"/></svg>
             {% endif %}
-          </div>
-          {% if alert.ends %}
-          <p class="text-[11px] sm:text-xs text-white/50 sm:whitespace-nowrap">Until {{ alert.ends }}</p>
-          {% endif %}
+            {{ alert.certainty or 'Unknown' }}
+          </span>
+          {# Urgency badge #}
+          <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] uppercase tracking-wider rounded-full
+            {% if alert.urgency == 'Immediate' %}bg-red-400/20 text-red-200
+            {% elif alert.urgency == 'Expected' %}bg-orange-400/20 text-orange-200
+            {% else %}bg-white/10 text-white/60{% endif %}">
+            {{ alert.urgency or 'Unknown' }}
+          </span>
+        </div>
+        {# Distance indicator #}
+        {% if alert.distance_miles is not none %}
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px]
+          {% if alert.distance_miles == 0 %}bg-white/15 text-white/90 font-medium{% else %}text-white/60{% endif %}">
+          <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span>{% if alert.distance_miles == 0 %}Your area{% else %}{{ alert.distance_miles }} mi away{% endif %}</span>
+        </span>
+        {% endif %}
+      </div>
+      
+      {# Alert title #}
+      <p class="font-medium text-[13px] sm:text-sm leading-tight text-white/95">{{ alert.title }}</p>
+      
+      {# Timeline bar - only show for Immediate urgency, otherwise show simple text #}
+      {% if alert.onset_iso and alert.ends_iso and alert.urgency == 'Immediate' %}
+      <div class="alert-timeline mt-1" data-onset="{{ alert.onset_iso }}" data-ends="{{ alert.ends_iso }}">
+        <div class="flex items-center justify-between text-[9px] sm:text-[10px] text-white/50 mb-1">
+          <span>{{ alert.onset }}</span>
+          <span>{{ alert.ends }}</span>
+        </div>
+        <div class="relative h-1.5 sm:h-2 rounded-full overflow-hidden
+          {% if alert.importance >= 75 %}bg-red-900/40
+          {% elif alert.importance >= 50 %}bg-orange-900/40
+          {% elif alert.importance >= 25 %}bg-yellow-900/40
+          {% else %}bg-blue-900/40{% endif %}">
+          {# Progress/duration bar #}
+          <div class="alert-timeline-fill absolute inset-y-0 left-0 rounded-full
+            {% if alert.importance >= 75 %}bg-red-500/60
+            {% elif alert.importance >= 50 %}bg-orange-500/60
+            {% elif alert.importance >= 25 %}bg-yellow-500/60
+            {% else %}bg-blue-400/60{% endif %}" style="width: 0%;"></div>
+          {# Current time marker #}
+          <div class="alert-timeline-marker absolute top-1/2 -translate-y-1/2 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border-2 border-white shadow-lg
+            {% if alert.importance >= 75 %}bg-red-400
+            {% elif alert.importance >= 50 %}bg-orange-400
+            {% elif alert.importance >= 25 %}bg-yellow-400
+            {% else %}bg-blue-300{% endif %}" style="left: 0%; display: none;"></div>
         </div>
       </div>
+      {% elif alert.onset or alert.ends %}
+      <div class="flex items-center gap-2 text-[10px] sm:text-[11px] text-white/40">
+        {% if alert.onset %}
+        <span>From {{ alert.onset }}</span>
+        {% endif %}
+        {% if alert.ends %}
+        <span>Until {{ alert.ends }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
 </div>
+<script>
+(function() {
+  // Update alert timelines
+  function updateAlertTimelines() {
+    const now = new Date();
+    document.querySelectorAll('.alert-timeline').forEach(timeline => {
+      const onset = new Date(timeline.dataset.onset);
+      const ends = new Date(timeline.dataset.ends);
+      const fill = timeline.querySelector('.alert-timeline-fill');
+      const marker = timeline.querySelector('.alert-timeline-marker');
+      
+      if (isNaN(onset.getTime()) || isNaN(ends.getTime())) return;
+      
+      const totalDuration = ends - onset;
+      if (totalDuration <= 0) return;
+      
+      const elapsed = now - onset;
+      const progress = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+      
+      // Fill shows how much time has passed
+      if (fill) fill.style.width = progress + '%';
+      
+      // Show marker only if we're within the alert period
+      if (marker) {
+        if (now >= onset && now <= ends) {
+          marker.style.display = 'block';
+          marker.style.left = `calc(${progress}% - 4px)`;
+        } else if (now < onset) {
+          // Before alert starts - show marker at beginning
+          marker.style.display = 'block';
+          marker.style.left = '-4px';
+        } else {
+          // After alert ends
+          marker.style.display = 'none';
+        }
+      }
+    });
+  }
+  
+  // Run immediately and then every minute
+  updateAlertTimelines();
+  setInterval(updateAlertTimelines, 60000);
+})();
+</script>
 {% elif forecast.alerts_error %}
 <div class="mb-4 sm:mb-6 glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-rose-300/20 bg-rose-500/5">
   <p class="text-rose-200 text-[11px] sm:text-xs text-center">{{ forecast.alerts_error }}</p>

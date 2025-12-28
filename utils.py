@@ -180,4 +180,69 @@ def format_alert_time(value):
     dt = parse_iso_datetime(value)
     if not dt:
         return None
-    return dt.strftime("%a %I:%M %p").lstrip("0")
+    # Include month/day for clarity: "Dec 28 11:35 AM"
+    return dt.strftime("%b %d %I:%M %p").replace(" 0", " ").lstrip("0")
+
+
+def calculate_distance_miles(lat1, lon1, lat2, lon2):
+    """Calculate distance between two points using Haversine formula."""
+    import math
+    
+    R = 3959  # Earth's radius in miles
+    
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lon = math.radians(lon2 - lon1)
+    
+    a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R * c
+
+
+def calculate_polygon_centroid(coordinates):
+    """Calculate the centroid of a polygon from GeoJSON coordinates."""
+    if not coordinates or not coordinates[0]:
+        return None, None
+    
+    # GeoJSON polygons have an outer ring as the first element
+    ring = coordinates[0]
+    if not ring:
+        return None, None
+    
+    # Calculate centroid using simple average (good enough for small areas)
+    total_lon = 0
+    total_lat = 0
+    count = 0
+    
+    for point in ring:
+        if len(point) >= 2:
+            total_lon += point[0]
+            total_lat += point[1]
+            count += 1
+    
+    if count == 0:
+        return None, None
+    
+    return total_lat / count, total_lon / count
+
+
+def calculate_multipolygon_centroid(coordinates):
+    """Calculate the centroid of a multipolygon from GeoJSON coordinates."""
+    if not coordinates:
+        return None, None
+    
+    all_lats = []
+    all_lons = []
+    
+    for polygon in coordinates:
+        lat, lon = calculate_polygon_centroid(polygon)
+        if lat is not None and lon is not None:
+            all_lats.append(lat)
+            all_lons.append(lon)
+    
+    if not all_lats:
+        return None, None
+    
+    return sum(all_lats) / len(all_lats), sum(all_lons) / len(all_lons)
