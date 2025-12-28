@@ -20,6 +20,7 @@ const elements = {
   permissionError: document.getElementById('permission-error'),
   permissionSearchBtn: document.getElementById('search-location'),
   toggleLocationBtn: document.getElementById('toggle-location'),
+  toggleLocationBtnDesktop: document.getElementById('toggle-location-desktop'),
   locationModal: document.getElementById('location-modal'),
   closeModalBtn: document.getElementById('close-modal'),
   modalBackdrop: document.getElementById('modal-backdrop'),
@@ -32,6 +33,7 @@ const elements = {
   locationForm: document.getElementById('location-form'),
   locationSuggestions: document.getElementById('location-suggestions'),
   refreshBtn: document.getElementById('refresh-weather'),
+  refreshBtnDesktop: document.getElementById('refresh-weather-desktop'),
   refreshModal: document.getElementById('refresh-modal'),
   refreshModalBackdrop: document.getElementById('refresh-modal-backdrop'),
   refreshCloseBtn: document.getElementById('refresh-close'),
@@ -57,6 +59,8 @@ const elements = {
   dayDetailTimeAxis: document.getElementById('day-detail-time-axis'),
   dayDetailCharts: document.getElementById('day-detail-charts'),
   dayDetailEmpty: document.getElementById('day-detail-empty'),
+  headerDatetimeMobile: document.getElementById('header-datetime-mobile'),
+  headerDatetimeDesktop: document.getElementById('header-datetime-desktop'),
 };
 
 // Configuration
@@ -991,6 +995,34 @@ function checkForLocationSwitch(coords) {
 }
 
 /**
+ * Format current date/time for header display
+ */
+function formatHeaderDateTime() {
+  const now = new Date();
+  const options = { weekday: 'short', month: 'short', day: 'numeric' };
+  const datePart = now.toLocaleDateString('en-US', options);
+  const timePart = now.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+  return `${datePart} • ${timePart}`;
+}
+
+/**
+ * Update the header datetime display
+ */
+function updateHeaderDateTime() {
+  const formatted = formatHeaderDateTime();
+  if (elements.headerDatetimeMobile) {
+    elements.headerDatetimeMobile.textContent = formatted;
+  }
+  if (elements.headerDatetimeDesktop) {
+    elements.headerDatetimeDesktop.textContent = formatted;
+  }
+}
+
+/**
  * Initialize the application
  */
 function initWeatherApp(options = {}) {
@@ -1006,6 +1038,10 @@ function initWeatherApp(options = {}) {
   if (hasWeatherData) {
     saveCurrentLocation();
   }
+
+  // Start live datetime updates (every minute)
+  updateHeaderDateTime();
+  setInterval(updateHeaderDateTime, 60000);
 
   // Initial load logic
   if (!hasWeatherData && !hasLocationParams) {
@@ -1023,6 +1059,7 @@ function initWeatherApp(options = {}) {
   elements.loadingSearchBtn?.addEventListener('click', openManualSearch);
 
   elements.toggleLocationBtn?.addEventListener('click', openModal);
+  elements.toggleLocationBtnDesktop?.addEventListener('click', openModal);
   elements.closeModalBtn?.addEventListener('click', closeModal);
   elements.modalBackdrop?.addEventListener('click', closeModal);
   elements.locationForm?.addEventListener('submit', () => {
@@ -1064,6 +1101,7 @@ function initWeatherApp(options = {}) {
   elements.switchModalBackdrop?.addEventListener('click', closeSwitchModal);
 
   elements.refreshBtn?.addEventListener('click', openRefreshModal);
+  elements.refreshBtnDesktop?.addEventListener('click', openRefreshModal);
   elements.refreshModalBackdrop?.addEventListener('click', closeRefreshModal);
   elements.refreshCloseBtn?.addEventListener('click', closeRefreshModal);
   elements.dayDetailBackdrop?.addEventListener('click', closeDayDetailModal);
@@ -1098,6 +1136,7 @@ function initWeatherApp(options = {}) {
   const tempContainer = elements.dayDetailTempChart?.parentElement;
   const precipContainer = elements.dayDetailPrecipChart?.parentElement;
 
+  // Desktop hover events
   tempContainer?.addEventListener('mousemove', handleTempChartMove);
   tempContainer?.addEventListener('mouseleave', () => {
     hideChartTooltip(elements.dayDetailTempTooltip, elements.dayDetailTempMarker);
@@ -1105,6 +1144,32 @@ function initWeatherApp(options = {}) {
 
   precipContainer?.addEventListener('mousemove', handlePrecipChartMove);
   precipContainer?.addEventListener('mouseleave', () => {
+    hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
+  });
+
+  // Mobile touch events for temperature chart
+  tempContainer?.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleTempChartMove(e);
+  }, { passive: false });
+  tempContainer?.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handleTempChartMove(e);
+  }, { passive: false });
+  tempContainer?.addEventListener('touchend', () => {
+    hideChartTooltip(elements.dayDetailTempTooltip, elements.dayDetailTempMarker);
+  });
+
+  // Mobile touch events for precipitation chart
+  precipContainer?.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handlePrecipChartMove(e);
+  }, { passive: false });
+  precipContainer?.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    handlePrecipChartMove(e);
+  }, { passive: false });
+  precipContainer?.addEventListener('touchend', () => {
     hideChartTooltip(elements.dayDetailPrecipTooltip, elements.dayDetailPrecipMarker);
   });
 }

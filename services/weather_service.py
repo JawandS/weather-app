@@ -469,8 +469,13 @@ def fetch_forecast(lat_value, lon_value):
     if feels_like_temp is None:
         feels_like_temp = current_temp
 
+    # Get current date/time for display
+    now = datetime.now()
+    current_datetime = now.strftime("%a, %b %d • %I:%M %p").replace(" 0", " ").lstrip("0")
+
     return {
         "location": location,
+        "current_datetime": current_datetime,
         "period": periods[0],
         "next_period": periods[1] if len(periods) > 1 else None,
         "hourly_today": hourly_today,
