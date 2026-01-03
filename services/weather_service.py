@@ -1,5 +1,12 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+try:
+    from zoneinfo import ZoneInfo
+    EST = ZoneInfo("America/New_York")
+except ImportError:
+    # Fallback for Python < 3.9: use fixed UTC-5 offset (EST)
+    EST = timezone(timedelta(hours=-5))
 
 import requests
 
@@ -469,8 +476,12 @@ def fetch_forecast(lat_value, lon_value):
     if feels_like_temp is None:
         feels_like_temp = current_temp
 
-    # Get current date/time for display
-    now = datetime.now()
+    # Get current date/time for display in EST (Eastern Time)
+    try:
+        now = datetime.now(EST)
+    except Exception:
+        # Ultimate fallback: use UTC and manually adjust
+        now = datetime.now(timezone.utc) - timedelta(hours=5)
     current_datetime = now.strftime("%a, %b %d • %I:%M %p").replace(" 0", " ").lstrip("0")
 
     return {

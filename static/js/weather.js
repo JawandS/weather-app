@@ -996,18 +996,41 @@ function checkForLocationSwitch(coords) {
 }
 
 /**
- * Format current date/time for header display
+ * Format current date/time for header display (EST timezone)
  */
 function formatHeaderDateTime() {
   const now = new Date();
-  const options = { weekday: 'short', month: 'short', day: 'numeric' };
-  const datePart = now.toLocaleDateString('en-US', options);
-  const timePart = now.toLocaleTimeString('en-US', { 
-    hour: 'numeric', 
-    minute: '2-digit',
-    hour12: true 
-  });
-  return `${datePart} • ${timePart}`;
+  const timezone = 'America/New_York';
+  
+  try {
+    const options = { weekday: 'short', month: 'short', day: 'numeric', timeZone: timezone };
+    const datePart = now.toLocaleDateString('en-US', options);
+    const timePart = now.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true,
+      timeZone: timezone
+    });
+    return `${datePart} • ${timePart}`;
+  } catch (e) {
+    // Fallback: manually calculate EST (UTC-5)
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const estOffset = -5 * 60 * 60000;
+    const estTime = new Date(utc + estOffset);
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = days[estTime.getDay()];
+    const monthName = months[estTime.getMonth()];
+    const date = estTime.getDate();
+    let hours = estTime.getHours();
+    const minutes = estTime.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    
+    return `${dayName}, ${monthName} ${date} • ${hours}:${minutes} ${ampm}`;
+  }
 }
 
 /**
